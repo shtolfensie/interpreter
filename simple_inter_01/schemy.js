@@ -41,24 +41,31 @@ const parse = tokens => {
 const atom = token => {
   // return /(\d+( \.\d+)?)/.test(token) ? +token : String(token);
   let atom = /[^\d.]/.test(token) ? String(token) : +token; // 1.4.60 this breaks it!!!!
-  if ((typeof atom !== "number") && atom.length > 1 && atom.slice(0, 1) === '-' && !(/[^\d.]/.test(atom.slice(1)))) atom = parseInt(atom); // find negative numbers
+  if (
+    typeof atom !== "number" &&
+    atom.length > 1 &&
+    atom.slice(0, 1) === "-" &&
+    !/[^\d.]/.test(atom.slice(1))
+  )
+    atom = parseInt(atom); // find negative numbers
   return atom;
 };
 
-const environment = ({ params, args, outer }) => { // create an environment object
+const environment = ({ params, args, outer }) => {
+  // create an environment object
 
   let env = {};
   outer = outer || {}; // if an outer env is not supplied, set it to an empty object
 
-
-  const find = (variable) => {
-    if (env.hasOwnProperty(variable)) { // if env has a variable, return it
+  const find = variable => {
+    if (env.hasOwnProperty(variable)) {
+      // if env has a variable, return it
       return env;
-    }
-    else { // otherwise, try looking for it in the outer env
+    } else {
+      // otherwise, try looking for it in the outer env
       return outer.find(variable);
     }
-  }
+  };
 
   for (let i = 0; i < params.length; i++) {
     env[params[i]] = args[i];
@@ -67,80 +74,107 @@ const environment = ({ params, args, outer }) => { // create an environment obje
   env.find = find;
 
   return env;
-}
+};
 
 // create the global environment
-const createGlobals = (env) => {
-
+const createGlobals = env => {
   // create a list of all the functions in Math and add them to the env
   const jsMathFunctions = [
-    "abs", "acos", "acosh", "asin",
-    "asinh", "atan", "atan2", "atanh",
-    "cbrt", "ceil", "clz32", "cos",
-    "cosh", "exp", "expm1", "floor",
-    "fround", "hypot", "imul", "log",
-    "log10", "log1p", "log2", "max",
-    "min", "pow", "random", "round",
-    "sign", "sin", "sinh", "sqrt",
-    "tan", "tanh", "trunc"]
+    "abs",
+    "acos",
+    "acosh",
+    "asin",
+    "asinh",
+    "atan",
+    "atan2",
+    "atanh",
+    "cbrt",
+    "ceil",
+    "clz32",
+    "cos",
+    "cosh",
+    "exp",
+    "expm1",
+    "floor",
+    "fround",
+    "hypot",
+    "imul",
+    "log",
+    "log10",
+    "log1p",
+    "log2",
+    "max",
+    "min",
+    "pow",
+    "random",
+    "round",
+    "sign",
+    "sin",
+    "sinh",
+    "sqrt",
+    "tan",
+    "tanh",
+    "trunc"
+  ];
 
-  jsMathFunctions.forEach(fun => env[fun] = Math[fun]);
+  jsMathFunctions.forEach(fun => (env[fun] = Math[fun]));
 
   // add all basic math functions, that are not in the Math object and other basic functions
-  env['+'] = (a, b) => a + b;
-  env['-'] = (a, b) => a - b;
-  env['*'] = (a, b) => a * b;
-  env['/'] = (a, b) => a / b;
-  env['>'] = (a, b) => a > b;
-  env['<'] = (a, b) => a < b;
-  env['>='] = (a, b) => a >= b;
-  env['<='] = (a, b) => a <= b;
-  env['='] = (a, b) => a === b;
-  env['equal?'] = (a, b) => a === b;
-  env['not'] = (a) => !a;
-  env['and'] = (a, b) => a && b;
-  env['or'] = (a, b) => a || b;
+  env["+"] = (a, b) => a + b;
+  env["-"] = (a, b) => a - b;
+  env["*"] = (a, b) => a * b;
+  env["/"] = (a, b) => a / b;
+  env[">"] = (a, b) => a > b;
+  env["<"] = (a, b) => a < b;
+  env[">="] = (a, b) => a >= b;
+  env["<="] = (a, b) => a <= b;
+  env["="] = (a, b) => a === b;
+  env["equal?"] = (a, b) => a === b;
+  env["not"] = a => !a;
+  env["and"] = (a, b) => a && b;
+  env["or"] = (a, b) => a || b;
 
   // add basic math constants
-  env['PI'] = Math.PI;
-  env["E"] = Math.E
-  env["LN10"] = Math.LN10
-  env["LN2"] = Math.LN2
-  env["LOG10E"] = Math.LOG10E
-  env["LOG2E"] = Math.LOG2E
-  env["PI"] = Math.PI
-  env["SQRT1_2"] = Math.SQRT1_2
-  env["SQRT2"] = Math.SQRT2
+  env["PI"] = Math.PI;
+  env["E"] = Math.E;
+  env["LN10"] = Math.LN10;
+  env["LN2"] = Math.LN2;
+  env["LOG10E"] = Math.LOG10E;
+  env["LOG2E"] = Math.LOG2E;
+  env["PI"] = Math.PI;
+  env["SQRT1_2"] = Math.SQRT1_2;
+  env["SQRT2"] = Math.SQRT2;
 
   return env;
-}
+};
 
-let globalEnv = createGlobals(environment({ params: [], specs: [], outer: null }))
+let globalEnv = createGlobals(
+  environment({ params: [], specs: [], outer: null })
+);
 
 // console.log(globalEnv['+'](105, 47));
 
-
 // evaluate AST returned from parser()
 // expects an AST node and the current env that is to be used for the evaluation
+// next will implement if statements, lambda statements, set! and quote
 const eval = (ast, env) => {
   env = env || globalEnv;
-  if (typeof ast === 'string') { // if the entire AST node is a string, it is a variable
+  if (typeof ast === "string") {
+    // if the entire AST node is a string, it is a variable
     return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
-  }
-  else if (typeof ast === "number") { // it the entire AST node is a constant number, return it
+  } else if (typeof ast === "number") {
+    // it the entire AST node is a constant number, return it
     return ast;
-  }
-  else if (ast[0] === 'define') { // the first node of the AST is define
+  } else if (ast[0] === "define") {
+    // the first node of the AST is define
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
-  }
-  else if (ast[0] === 'begin') {
+  } else if (ast[0] === "begin") {
     let res;
     for (let i = 1; i < ast.length; i++) {
       res = eval(ast[i], env);
     }
     return res;
-  }
-  else {
+  } else {
     let args = [];
     for (let i = 0; i < ast.length; i++) {
       args[i] = eval(ast[i], env);
@@ -149,7 +183,7 @@ const eval = (ast, env) => {
 
     return procedure.apply(null, args);
   }
-}
+};
 
 // let ast = parse(tokenize("(begin (define r 1) (define t (- 5 2)) (+ r (* t 2)))"));
 // let ast = parse(tokenize("(hypot 3 4)"));
@@ -162,14 +196,13 @@ console.log(ast);
 let res = eval(ast);
 console.log(res);
 
-
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))
 //   JSON.stringify(parse(tokenize("(+ 2 3)")))
 //   // JSON.stringify(
 //   //   parse(
 //   //     tokenize(`
-//   // (begin 
+//   // (begin
 //   //   (define r 1.460)
 //   //   (* pi (* r r)))`)
 //   //   )
