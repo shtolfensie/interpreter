@@ -19,12 +19,7 @@ const NumNode = token => {
   return { token, value: token.value, nodeType: "NumNode" };
 };
 
-const Parser = program => {
-  let program_full = program.split("");
-  program = program.split("").filter(c => (c !== " " ? true : false));
-  let pos = 0;
-  let curr_token = "";
-
+const Lexer = (program, pos) => {
   const get_next_token = () => {
     if (pos > program.length - 1) return { type: EOF, value: null };
 
@@ -59,15 +54,6 @@ const Parser = program => {
     pos++;
   };
 
-  const error = (msg = "Error") => {
-    let full_pos = 0;
-    for (let i = 0; i < pos; ) {
-      if (program_full[full_pos] !== " ") i++;
-      full_pos++;
-    }
-    throw `${msg} at col ${full_pos}`;
-  };
-
   const isNumber = str => {
     return !Number.isNaN(parseInt(str));
   };
@@ -81,13 +67,41 @@ const Parser = program => {
     }
   };
 
+  return { token: get_next_token(), pos };
+
+  // try {
+  //   return expr(true);
+  // } catch (e) {
+  //   console.error(e);
+  //   return null;
+  // }
+};
+
+const Parser = program => {
+  let program_full = program.split("");
+  program = program.split("").filter(c => (c !== " " ? true : false));
+  let pos = 0;
+  let curr_token = "";
+
   const eat = type => {
     console.log(type, curr_token.type);
-    if (curr_token.type === type) curr_token = get_next_token();
-    else {
+    if (curr_token.type === type) {
+      let lexer_return = Lexer(program, pos);
+      pos = lexer_return.pos;
+      curr_token = lexer_return.token;
+    } else {
       if (type === RPAREN) error("Missing closing parenthesis");
       else error("Wrong token type");
     }
+  };
+
+  const error = (msg = "Error") => {
+    let full_pos = 0;
+    for (let i = 0; i < pos; ) {
+      if (program_full[full_pos] !== " ") i++;
+      full_pos++;
+    }
+    throw `${msg} at col ${full_pos}`;
   };
 
   /*
@@ -149,7 +163,11 @@ const Parser = program => {
   };
 
   const expr = init => {
-    if (init) curr_token = get_next_token();
+    if (init) {
+      let lexer_return = Lexer(program, pos);
+      pos = lexer_return.pos;
+      curr_token = lexer_return.token;
+    }
     let node = term();
 
     while (
@@ -168,12 +186,6 @@ const Parser = program => {
     return node;
   };
   return expr(true);
-  // try {
-  //   return expr(true);
-  // } catch (e) {
-  //   console.error(e);
-  //   return null;
-  // }
 };
 
 let Interpreter = ast => {
@@ -205,8 +217,8 @@ let Interpreter = ast => {
 
 try {
   // let res = Parser("7 + 3 * (10 / (12 / (3 + 1) - 1))");
-  let res = Parser("7 + --3");
-  // let res = Parser("7 + 3 * (10 / (12 / (3 + 1) - 1)) / (2 + 3) - 5 - 3 + (8)");
+  // let res = Parser("7 + -3");
+  let res = Parser("7 + 3 * (10 / (12 / (3 + 1) - 1)) / (2 + 3) - 5 - 3 + (8)");
   // let res = Parser("(((8) * 2)) + 5 * (2) + 100");
   console.log(res);
 
