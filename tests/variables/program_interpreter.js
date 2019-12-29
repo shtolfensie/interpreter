@@ -23,8 +23,12 @@ const NumNode = token => {
   return { token, value: token.value, nodeType: "NumNode" };
 };
 
-const VarNode = (id, value) => {
-  return { id, value, nodeType: "VarNode" }
+const VarAssignNode = (id, value) => {
+  return { id, value, nodeType: "VarAssignNode" }
+}
+
+const IdNode = (token) => {
+  return { value: token.value, token, nodeType: "IdNode" }
 }
 
 const StatementListNode = (statementArr) => {
@@ -149,7 +153,7 @@ const Parser = program => {
       curr_token = lexer_return.token;
     } else {
       if (type === RPAREN) error("Missing closing parenthesis");
-      else error("Wrong token type");
+      else error(`Wrong token type. Expected ${type}`);
     }
   };
 
@@ -192,6 +196,9 @@ const Parser = program => {
       let inner_res = expr();
       rParen();
       return inner_res;
+    }
+    else if (curr_token.type === ID) {
+      return variable();
     }
   };
 
@@ -244,14 +251,19 @@ const Parser = program => {
     return node;
   };
 
+  const variable = () => {
+    let id = IdNode(curr_token);
+    eat(ID);
+    return id;
+  }
+
   const assignStatement = () => {
     eat(VAR);
-    let id = curr_token;
+    let id = variable();
 
-    eat(ID);
     eat(ASSIGN);
     let value = expr();
-    return VarNode(id, value);
+    return VarAssignNode(id, value);
   }
 
 
@@ -324,8 +336,9 @@ try {
   // let res = Parser("7 + 3 * (10 / (12 / (3 + 1) - 1)) / (2 + 3) - 5 - 3 + (8)");
   // let res = Parser("(((8) * 2)) + 5 * (2) + 100");
 
-  let res = Parser('var aReallyLongVariable2 = 10; 2 + 4;');
-  console.log(res);
+  let res = Parser('var num = 10; 2 + 4; var bum = num + 6;');
+  // let res = Parser('var num = 10;');
+  console.log(res.statementArr[2]);
 
   // let calculated = Interpreter(res);
   // console.log(calculated);
