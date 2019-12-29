@@ -74,7 +74,7 @@ class EditorArea extends Component {
     return (
       <div>
         <Toolbar interpreterSelect={interpreterSelect} displayAST={displayAST} displayCode={displayCode} handleChange={this.handleToolBarChange} />
-        <button onClick={this.handleClickRun}>RUN!</button>
+        <button className='btn run-btn' onClick={this.handleClickRun}>RUN!</button>
         <Examples inter={interpreterSelect} />
         <div className='editorContainer'>
           <div>
