@@ -36,13 +36,13 @@ const StatementListNode = (statementArr) => {
 }
 
 const Lexer = (program, pos) => {
-  const get_next_token = () => {
+  const getNextToken = () => {
     if (pos > program.length - 1) return { type: EOF, value: null };
 
-    let cur_char = program[pos];
+    let currChar = program[pos];
 
-    if (isNumber(cur_char)) {
-      return getNumber(cur_char);
+    if (isNumber(currChar)) {
+      return getNumber(currChar);
     }
     else if (isVAR()) { // this would return true even if 'variable' was given to it; need to fix whitespace handeling
       advance(3);
@@ -51,32 +51,32 @@ const Lexer = (program, pos) => {
     else if ((id = isID()) !== false) {
       return { type: ID, value: id }
     }
-    else if (cur_char === "+") {
+    else if (currChar === "+") {
       advance();
-      return { type: PLUS, value: cur_char };
-    } else if (cur_char === "-") {
+      return { type: PLUS, value: currChar };
+    } else if (currChar === "-") {
       advance();
-      return { type: MINUS, value: cur_char };
-    } else if (cur_char === "/") {
+      return { type: MINUS, value: currChar };
+    } else if (currChar === "/") {
       advance();
-      return { type: DIVIDED, value: cur_char };
-    } else if (cur_char === "*") {
+      return { type: DIVIDED, value: currChar };
+    } else if (currChar === "*") {
       advance();
-      return { type: TIMES, value: cur_char };
-    } else if (cur_char === "(") {
+      return { type: TIMES, value: currChar };
+    } else if (currChar === "(") {
       advance();
-      return { type: LPAREN, value: cur_char };
-    } else if (cur_char === ")") {
+      return { type: LPAREN, value: currChar };
+    } else if (currChar === ")") {
       advance();
-      return { type: RPAREN, value: cur_char };
+      return { type: RPAREN, value: currChar };
     }
-    else if (cur_char === ';') {
+    else if (currChar === ';') {
       advance();
-      return { type: SEMI, value: cur_char };
+      return { type: SEMI, value: currChar };
     }
-    else if (cur_char === '=') {
+    else if (currChar === '=') {
       advance();
-      return { type: ASSIGN, value: cur_char };
+      return { type: ASSIGN, value: currChar };
     }
   };
 
@@ -135,22 +135,22 @@ const Lexer = (program, pos) => {
     else return false;
   }
 
-  return { token: get_next_token(), pos };
+  return { token: getNextToken(), pos };
 
 };
 
 const Parser = program => {
-  let program_full = program.split("");
+  let programFull = program.split("");
   program = program.split("").filter(c => (c !== " " ? true : false));
   let pos = 0;
-  let curr_token = "";
+  let currToken = "";
 
   const eat = type => {
-    console.log(type, curr_token.type);
-    if (curr_token.type === type) {
-      let lexer_return = Lexer(program, pos);
-      pos = lexer_return.pos;
-      curr_token = lexer_return.token;
+    console.log(type, currToken.type);
+    if (currToken.type === type) {
+      let lexerReturn = Lexer(program, pos);
+      pos = lexerReturn.pos;
+      currToken = lexerReturn.token;
     } else {
       if (type === RPAREN) error("Missing closing parenthesis");
       else error(`Wrong token type. Expected ${type}`);
@@ -158,20 +158,20 @@ const Parser = program => {
   };
 
   const error = (msg = "Error") => {
-    let full_pos = 0;
+    let fullPos = 0;
     for (let i = 0; i < pos;) {
-      if (program_full[full_pos] !== " ") i++;
-      full_pos++;
+      if (programFull[fullPos] !== " ") i++;
+      fullPos++;
     }
-    throw `${msg} at col ${full_pos}`;
+    throw `${msg} at col ${fullPos}`;
   };
 
   /*
   Grammar
-    progam: statement_list
-    statement_list: statement+
-    statement: expr; | variable_assignment; | empty
-    variable_assignment: VAR ID ASSIGN expr
+    progam: statementList
+    statementList: statement+
+    statement: expr; | variableAssignment; | empty
+    variableAssignment: VAR ID ASSIGN expr
     expr: term ((PLUS | MINUS) term)*
     term: factor ((MUL | DIV) block)*
     factor: (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | variable
@@ -179,31 +179,31 @@ const Parser = program => {
    */
 
   const factor = () => {
-    let token = curr_token;
+    let token = currToken;
 
-    if (curr_token.type === PLUS) {
+    if (currToken.type === PLUS) {
       eat(PLUS);
       return UnaryOpNode(token, factor());
     }
-    if (curr_token.type === MINUS) {
+    if (currToken.type === MINUS) {
       eat(MINUS);
       return UnaryOpNode(token, factor());
     }
-    if (curr_token.type === NUM) {
+    if (currToken.type === NUM) {
       eat(NUM);
       return NumNode(token);
     } else if (lParen()) {
-      let inner_res = expr();
+      let innerRes = expr();
       rParen();
-      return inner_res;
+      return innerRes;
     }
-    else if (curr_token.type === ID) {
+    else if (currToken.type === ID) {
       return variable();
     }
   };
 
   const lParen = () => {
-    if (curr_token.type === LPAREN) {
+    if (currToken.type === LPAREN) {
       eat(LPAREN);
       return true;
     }
@@ -217,10 +217,10 @@ const Parser = program => {
     let node = factor();
 
     while (
-      curr_token.type !== EOF &&
-      (curr_token.type === TIMES || curr_token.type === DIVIDED)
+      currToken.type !== EOF &&
+      (currToken.type === TIMES || currToken.type === DIVIDED)
     ) {
-      let op = curr_token;
+      let op = currToken;
       if (op.type === TIMES) {
         eat(TIMES);
       } else if (op.type === DIVIDED) {
@@ -236,10 +236,10 @@ const Parser = program => {
     let node = term();
 
     while (
-      curr_token.type !== EOF &&
-      (curr_token.type === PLUS || curr_token.type === MINUS)
+      currToken.type !== EOF &&
+      (currToken.type === PLUS || currToken.type === MINUS)
     ) {
-      let op = curr_token;
+      let op = currToken;
       if (op.type === PLUS) {
         eat(PLUS);
       } else if (op.type === MINUS) {
@@ -252,7 +252,7 @@ const Parser = program => {
   };
 
   const variable = () => {
-    let id = IdNode(curr_token);
+    let id = IdNode(currToken);
     eat(ID);
     return id;
   }
@@ -269,19 +269,19 @@ const Parser = program => {
 
   const statement = () => {
     let node;
-    if (curr_token.type === VAR) {
+    if (currToken.type === VAR) {
       node = assignStatement();
     }
-    else if (curr_token.type === EOF) return; // this will be be branch for empty if I add blocks
+    else if (currToken.type === EOF) return; // this will be be branch for empty if I add blocks
     else node = expr();
 
     eat(SEMI);
     return node;
   }
 
-  const statement_list = () => {
+  const statementList = () => {
     let nodeArr = [statement()];
-    while (curr_token.type !== EOF) {
+    while (currToken.type !== EOF) {
       nodeArr.push(statement());
     }
     return StatementListNode(nodeArr);
@@ -289,14 +289,14 @@ const Parser = program => {
 
   const programWhole = init => {
     if (init) {
-      let lexer_return = Lexer(program, pos);
-      pos = lexer_return.pos;
-      curr_token = lexer_return.token;
+      let lexerReturn = Lexer(program, pos);
+      pos = lexerReturn.pos;
+      currToken = lexerReturn.token;
     }
 
-    let ast = statement_list();
+    let ast = statementList();
 
-    if (curr_token.type !== EOF) error('Invalid program.');
+    if (currToken.type !== EOF) error('Invalid program.');
     return ast;
   }
 

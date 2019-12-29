@@ -8,29 +8,29 @@ const EOF = "EOF",
 const Interpreter = program => {
   program = program.split("").filter(c => (c !== " " ? true : false));
   let pos = 0;
-  let curr_token = "";
+  let currToken = "";
 
-  const get_next_token = () => {
+  const getNextToken = () => {
     if (pos > program.length - 1) return { type: EOF, value: null };
 
-    let cur_char = program[pos];
+    let currChar = program[pos];
 
-    if (isNumber(cur_char)) {
-      return getNumber(cur_char);
+    if (isNumber(currChar)) {
+      return getNumber(currChar);
 
-      // return { type: NUM, value: parseInt(cur_char) };
-    } else if (cur_char === "+") {
+      // return { type: NUM, value: parseInt(currChar) };
+    } else if (currChar === "+") {
       pos++;
-      return { type: PLUS, value: cur_char };
-    } else if (cur_char === "-") {
+      return { type: PLUS, value: currChar };
+    } else if (currChar === "-") {
       pos++;
-      return { type: MINUS, value: cur_char };
-    } else if (cur_char === "/") {
+      return { type: MINUS, value: currChar };
+    } else if (currChar === "/") {
       pos++;
-      return { type: DIVIDED, value: cur_char };
-    } else if (cur_char === "*") {
+      return { type: DIVIDED, value: currChar };
+    } else if (currChar === "*") {
       pos++;
-      return { type: TIMES, value: cur_char };
+      return { type: TIMES, value: currChar };
     }
   };
 
@@ -52,25 +52,25 @@ const Interpreter = program => {
   };
 
   const eat = type => {
-    if (curr_token.type === type) curr_token = get_next_token();
+    if (currToken.type === type) currToken = getNextToken();
     else {
       error("Wrong token type");
     }
   };
 
   const eval = () => {
-    curr_token = get_next_token();
-    let res = curr_token;
+    currToken = getNextToken();
+    let res = currToken;
     eat(NUM);
 
-    while (curr_token.type !== EOF) {
-      let op = curr_token;
+    while (currToken.type !== EOF) {
+      let op = currToken;
       if (op.type === PLUS) eat(PLUS);
       else if (op.type === MINUS) eat(MINUS);
       else if (op.type === DIVIDED) eat(DIVIDED);
       else if (op.type === TIMES) eat(TIMES);
 
-      let right = curr_token;
+      let right = currToken;
       eat(NUM);
 
       if (op.type === PLUS) res.value += right.value;

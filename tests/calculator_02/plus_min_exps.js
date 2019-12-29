@@ -6,23 +6,23 @@ const EOF = "EOF",
 const Interpreter = program => {
   program = program.split("").filter(c => (c !== " " ? true : false));
   let pos = 0;
-  let curr_token = "";
+  let currToken = "";
 
-  const get_next_token = () => {
+  const getNextToken = () => {
     if (pos > program.length - 1) return { type: EOF, value: null };
 
-    let cur_char = program[pos];
+    let currChar = program[pos];
 
-    if (isNumber(cur_char)) {
-      return getNumber(cur_char);
+    if (isNumber(currChar)) {
+      return getNumber(currChar);
 
-      // return { type: NUM, value: parseInt(cur_char) };
-    } else if (cur_char === "+") {
+      // return { type: NUM, value: parseInt(currChar) };
+    } else if (currChar === "+") {
       advance();
-      return { type: PLUS, value: cur_char };
-    } else if (cur_char === "-") {
+      return { type: PLUS, value: currChar };
+    } else if (currChar === "-") {
       advance();
-      return { type: MINUS, value: cur_char };
+      return { type: MINUS, value: currChar };
     }
   };
 
@@ -48,24 +48,24 @@ const Interpreter = program => {
   };
 
   const eat = type => {
-    if (curr_token.type === type) curr_token = get_next_token();
+    if (currToken.type === type) currToken = getNextToken();
     else {
       error("Wrong token type");
     }
   };
 
   const term = () => {
-    let token = curr_token;
+    let token = currToken;
     eat(NUM);
     return token;
   }
 
   const eval = () => {
-    curr_token = get_next_token();
+    currToken = getNextToken();
     let res = term();
 
-    while (curr_token.type !== EOF && (curr_token.type === PLUS || curr_token.type === MINUS)) {
-      let op = curr_token;
+    while (currToken.type !== EOF && (currToken.type === PLUS || currToken.type === MINUS)) {
+      let op = currToken;
       if (op.type === PLUS) {
         eat(PLUS);
         res.value += term().value;

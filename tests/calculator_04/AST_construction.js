@@ -20,33 +20,33 @@ const NumNode = token => {
 };
 
 const Lexer = (program, pos) => {
-  const get_next_token = () => {
+  const getNextToken = () => {
     if (pos > program.length - 1) return { type: EOF, value: null };
 
-    let cur_char = program[pos];
+    let currChar = program[pos];
 
-    if (isNumber(cur_char)) {
-      return getNumber(cur_char);
+    if (isNumber(currChar)) {
+      return getNumber(currChar);
 
-      // return { type: NUM, value: parseInt(cur_char) };
-    } else if (cur_char === "+") {
+      // return { type: NUM, value: parseInt(currChar) };
+    } else if (currChar === "+") {
       advance();
-      return { type: PLUS, value: cur_char };
-    } else if (cur_char === "-") {
+      return { type: PLUS, value: currChar };
+    } else if (currChar === "-") {
       advance();
-      return { type: MINUS, value: cur_char };
-    } else if (cur_char === "/") {
+      return { type: MINUS, value: currChar };
+    } else if (currChar === "/") {
       advance();
-      return { type: DIVIDED, value: cur_char };
-    } else if (cur_char === "*") {
+      return { type: DIVIDED, value: currChar };
+    } else if (currChar === "*") {
       advance();
-      return { type: TIMES, value: cur_char };
-    } else if (cur_char === "(") {
+      return { type: TIMES, value: currChar };
+    } else if (currChar === "(") {
       advance();
-      return { type: LPAREN, value: cur_char };
-    } else if (cur_char === ")") {
+      return { type: LPAREN, value: currChar };
+    } else if (currChar === ")") {
       advance();
-      return { type: RPAREN, value: cur_char };
+      return { type: RPAREN, value: currChar };
     }
   };
 
@@ -67,7 +67,7 @@ const Lexer = (program, pos) => {
     }
   };
 
-  return { token: get_next_token(), pos };
+  return { token: getNextToken(), pos };
 
   // try {
   //   return expr(true);
@@ -78,17 +78,17 @@ const Lexer = (program, pos) => {
 };
 
 const Parser = program => {
-  let program_full = program.split("");
+  let programFull = program.split("");
   program = program.split("").filter(c => (c !== " " ? true : false));
   let pos = 0;
-  let curr_token = "";
+  let currToken = "";
 
   const eat = type => {
-    console.log(type, curr_token.type);
-    if (curr_token.type === type) {
-      let lexer_return = Lexer(program, pos);
-      pos = lexer_return.pos;
-      curr_token = lexer_return.token;
+    console.log(type, currToken.type);
+    if (currToken.type === type) {
+      let lexerReturn = Lexer(program, pos);
+      pos = lexerReturn.pos;
+      currToken = lexerReturn.token;
     } else {
       if (type === RPAREN) error("Missing closing parenthesis");
       else error("Wrong token type");
@@ -96,12 +96,12 @@ const Parser = program => {
   };
 
   const error = (msg = "Error") => {
-    let full_pos = 0;
-    for (let i = 0; i < pos; ) {
-      if (program_full[full_pos] !== " ") i++;
-      full_pos++;
+    let fullPos = 0;
+    for (let i = 0; i < pos;) {
+      if (programFull[fullPos] !== " ") i++;
+      fullPos++;
     }
-    throw `${msg} at col ${full_pos}`;
+    throw `${msg} at col ${fullPos}`;
   };
 
   /*
@@ -112,28 +112,28 @@ const Parser = program => {
    */
 
   const factor = () => {
-    let token = curr_token;
+    let token = currToken;
 
-    if (curr_token.type === PLUS) {
+    if (currToken.type === PLUS) {
       eat(PLUS);
       return UnaryOpNode(token, factor());
     }
-    if (curr_token.type === MINUS) {
+    if (currToken.type === MINUS) {
       eat(MINUS);
       return UnaryOpNode(token, factor());
     }
-    if (curr_token.type === NUM) {
+    if (currToken.type === NUM) {
       eat(NUM);
       return NumNode(token);
     } else if (lParen()) {
-      let inner_res = expr();
+      let innerRes = expr();
       rParen();
-      return inner_res;
+      return innerRes;
     }
   };
 
   const lParen = () => {
-    if (curr_token.type === LPAREN) {
+    if (currToken.type === LPAREN) {
       eat(LPAREN);
       return true;
     }
@@ -147,10 +147,10 @@ const Parser = program => {
     let node = factor();
 
     while (
-      curr_token.type !== EOF &&
-      (curr_token.type === TIMES || curr_token.type === DIVIDED)
+      currToken.type !== EOF &&
+      (currToken.type === TIMES || currToken.type === DIVIDED)
     ) {
-      let op = curr_token;
+      let op = currToken;
       if (op.type === TIMES) {
         eat(TIMES);
       } else if (op.type === DIVIDED) {
@@ -164,17 +164,17 @@ const Parser = program => {
 
   const expr = init => {
     if (init) {
-      let lexer_return = Lexer(program, pos);
-      pos = lexer_return.pos;
-      curr_token = lexer_return.token;
+      let lexerTeturn = Lexer(program, pos);
+      pos = lexerTeturn.pos;
+      currToken = lexerTeturn.token;
     }
     let node = term();
 
     while (
-      curr_token.type !== EOF &&
-      (curr_token.type === PLUS || curr_token.type === MINUS)
+      currToken.type !== EOF &&
+      (currToken.type === PLUS || currToken.type === MINUS)
     ) {
-      let op = curr_token;
+      let op = currToken;
       if (op.type === PLUS) {
         eat(PLUS);
       } else if (op.type === MINUS) {
