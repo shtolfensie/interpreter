@@ -24,16 +24,16 @@ const NumNode = token => {
 };
 
 const VarAssignNode = (id, value) => {
-  return { id, value, nodeType: "VarAssignNode" }
-}
+  return { id, value, nodeType: "VarAssignNode" };
+};
 
-const IdNode = (token) => {
-  return { value: token.value, token, nodeType: "IdNode" }
-}
+const IdNode = token => {
+  return { value: token.value, token, nodeType: "IdNode" };
+};
 
-const StatementListNode = (statementArr) => {
-  return { statementArr, nodeType: "StatementListNode" }
-}
+const StatementListNode = statementArr => {
+  return { statementArr, nodeType: "StatementListNode" };
+};
 
 const Lexer = (program, pos) => {
   const getNextToken = () => {
@@ -41,16 +41,19 @@ const Lexer = (program, pos) => {
 
     let currChar = program[pos];
 
+    if (/[ \n\t]/.test(currChar)) {
+      advance();
+      return getNextToken();
+    }
     if (isNumber(currChar)) {
       return getNumber(currChar);
-    }
-    else if (isVAR()) { // this would return true even if 'variable' was given to it; need to fix whitespace handeling
-      advance(3);
-      return { type: VAR, value: 'var' }
-    }
-    else if ((id = isID()) !== false) {
-      return { type: ID, value: id }
-    }
+    } else if ((variableToken = getVariable()) !== false) return variableToken;
+    // else if (isVAR()) {
+    //   // this would return true even if 'variable' was given to it; need to fix whitespace handeling
+    //   advance(3);
+    //   return { type: VAR, value: "var" };
+    // } else if ((id = isID()) !== false) {
+    //   return { type: ID, value: id };
     else if (currChar === "+") {
       advance();
       return { type: PLUS, value: currChar };
@@ -69,12 +72,10 @@ const Lexer = (program, pos) => {
     } else if (currChar === ")") {
       advance();
       return { type: RPAREN, value: currChar };
-    }
-    else if (currChar === ';') {
+    } else if (currChar === ";") {
       advance();
       return { type: SEMI, value: currChar };
-    }
-    else if (currChar === '=') {
+    } else if (currChar === "=") {
       advance();
       return { type: ASSIGN, value: currChar };
     }
@@ -83,10 +84,10 @@ const Lexer = (program, pos) => {
   const peek = () => {
     if (pos + 1 > program.length - 1) return null;
     return program[pos + 1];
-  }
+  };
 
   const advance = (distance = 1) => {
-    if (distance === 0) console.error('Invalid advance distance');
+    if (distance === 0) console.error("Invalid advance distance");
     pos += distance;
   };
 
@@ -103,45 +104,30 @@ const Lexer = (program, pos) => {
     }
   };
 
-  const isVAR = () => {
-    const template = 'var'.split('');
+  const RESERVED_TOKENS = {
+    var: { type: VAR, value: "var" }
+  };
+
+  const getVariable = () => {
     let localPos = 0;
-    for (; localPos < template.length; localPos++) {
-      if (template[localPos] !== program[pos + localPos]) return false;
-    }
+    let result = program[pos];
+    if (!/[a-zA-Z]/.test(result)) return false;
 
-    // template.forEach(c => {
-    //   if (c !== program[pos + localPos]) return false;
-    //   else {
-    //     localPos++;
-    //   }
-    // });
-    return true;
-  }
-
-  const isID = () => {
-    let localPos = 0;
-    let id = '';
-    if (/[a-zA-Z]/.test(program[pos])) {
-      id += program[pos];
-      while (/[\w]/.test(program[++localPos + pos])) {
-        id += program[localPos + pos];
-      }
-      advance(localPos);
-      console.log(id);
-
-      return id;
-    }
-    else return false;
-  }
+    while (/[\w]/.test(program[++localPos + pos]))
+      result += program[localPos + pos];
+    advance(localPos);
+    return RESERVED_TOKENS.hasOwnProperty(result)
+      ? RESERVED_TOKENS[result]
+      : { type: ID, value: result };
+  };
 
   return { token: getNextToken(), pos };
-
 };
 
 const Parser = program => {
   let programFull = program.split("");
-  program = program.split("").filter(c => (c !== " " ? true : false));
+  // program = program.split("").filter(c => (c !== " " ? true : false));
+  program = program.split("");
   let pos = 0;
   let currToken = "";
 
@@ -159,7 +145,7 @@ const Parser = program => {
 
   const error = (msg = "Error") => {
     let fullPos = 0;
-    for (let i = 0; i < pos;) {
+    for (let i = 0; i < pos; ) {
       if (programFull[fullPos] !== " ") i++;
       fullPos++;
     }
@@ -196,8 +182,7 @@ const Parser = program => {
       let innerRes = expr();
       rParen();
       return innerRes;
-    }
-    else if (currToken.type === ID) {
+    } else if (currToken.type === ID) {
       return variable();
     }
   };
@@ -255,7 +240,7 @@ const Parser = program => {
     let id = IdNode(currToken);
     eat(ID);
     return id;
-  }
+  };
 
   const assignStatement = () => {
     eat(VAR);
@@ -264,20 +249,19 @@ const Parser = program => {
     eat(ASSIGN);
     let value = expr();
     return VarAssignNode(id, value);
-  }
-
+  };
 
   const statement = () => {
     let node;
     if (currToken.type === VAR) {
       node = assignStatement();
-    }
-    else if (currToken.type === EOF) return; // this will be be branch for empty if I add blocks
+    } else if (currToken.type === EOF) return;
+    // this will be be branch for empty if I add blocks
     else node = expr();
 
     eat(SEMI);
     return node;
-  }
+  };
 
   const statementList = () => {
     let nodeArr = [statement()];
@@ -285,7 +269,7 @@ const Parser = program => {
       nodeArr.push(statement());
     }
     return StatementListNode(nodeArr);
-  }
+  };
 
   const programWhole = init => {
     if (init) {
@@ -296,9 +280,9 @@ const Parser = program => {
 
     let ast = statementList();
 
-    if (currToken.type !== EOF) error('Invalid program.');
+    if (currToken.type !== EOF) error("Invalid program.");
     return ast;
-  }
+  };
 
   return programWhole(true);
 };
@@ -336,9 +320,10 @@ try {
   // let res = Parser("7 + 3 * (10 / (12 / (3 + 1) - 1)) / (2 + 3) - 5 - 3 + (8)");
   // let res = Parser("(((8) * 2)) + 5 * (2) + 100");
 
-  let res = Parser('var num = 10; 2 + 4; var bum = num + 6;');
+  let res = Parser("var variable = 10; 2 + 4; var bum = num + 6;");
   // let res = Parser('var num = 10;');
-  console.log(res.statementArr[2]);
+  // console.log(res);
+  res["statementArr"].forEach(statement => console.log(statement));
 
   // let calculated = Interpreter(res);
   // console.log(calculated);
