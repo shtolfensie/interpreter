@@ -169,17 +169,20 @@ const eval = (ast, env) => {
     // the first node of the AST is define
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   } else if (ast[0] === "begin") {
+    // evaluate all self contained top level blocks, pass down the env -> able to store variables
     let res;
     for (let i = 1; i < ast.length; i++) {
       res = eval(ast[i], env);
     }
     return res;
   } else {
+    // everything else is a function call
     let args = [];
     for (let i = 0; i < ast.length; i++) {
+      // eval all elemnts - the first will return a function
       args[i] = eval(ast[i], env);
     }
-    let procedure = args.shift();
+    let procedure = args.shift(); // the first argument is the procedure itself
 
     return procedure.apply(null, args);
   }
