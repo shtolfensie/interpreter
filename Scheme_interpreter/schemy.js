@@ -29,7 +29,7 @@ const parse = tokens => {
       nextTokens.push(parse(tokens)); // parse the block and push it to the array
       tokens.shift(); // remove the token we just parsed from the start
     }
-    tokens.pop(); // remove one closing ) from the end
+    // tokens.pop(); // remove one closing ) from the end
 
     return nextTokens; // return the block
   } else {
@@ -51,7 +51,7 @@ const atom = token => {
   return atom;
 };
 
-const environment = ({ params, args, outer }) => {
+const environment = ({ varNames, args, outer }) => {
   // create an environment object
 
   let env = {};
@@ -67,8 +67,8 @@ const environment = ({ params, args, outer }) => {
     }
   };
 
-  for (let i = 0; i < params.length; i++) {
-    env[params[i]] = args[i];
+  for (let i = 0; i < varNames.length; i++) {
+    env[varNames[i]] = args[i];
   }
 
   env.find = find;
@@ -149,7 +149,7 @@ const createGlobals = env => {
 };
 
 let globalEnv = createGlobals(
-  environment({ params: [], specs: [], outer: null })
+  environment({ varNames: [], args: [], outer: null })
 );
 
 // console.log(globalEnv['+'](105, 47));
@@ -168,6 +168,17 @@ const eval = (ast, env) => {
   } else if (ast[0] === "define") {
     // the first node of the AST is define
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
+  } else if (ast[0] === "lambda") {
+    let vars = ast[1];
+    let body = ast[2];
+
+    return function() {
+      // works only with 'function' doesn't work with () =>
+      return eval(
+        body,
+        environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
+      );
+    };
   } else if (ast[0] === "begin") {
     // evaluate all self contained top level blocks, pass down the env -> able to store variables
     let res;
@@ -184,16 +195,23 @@ const eval = (ast, env) => {
     }
     let procedure = args.shift(); // the first argument is the procedure itself
 
-    return procedure.apply(null, args);
+    return procedure.apply(env, args);
   }
 };
 
 // let ast = parse(tokenize("(begin (define r 1) (define t (- 5 2)) (+ r (* t 2)))"));
-// let ast = parse(tokenize("(hypot 3 4)"));
-// let ast = parse(tokenize("(begin (+ -456 -30))"));
+// let ast = parse(tokenize("(+ 3 4)"));
+// let ast = parse(
+//   tokenize("(begin (define area (lambda (r t) (+ r t)) ) (area 4 6) )")
+// );
 // let ast = parse(tokenize("(begin (define r 30) (define pi 3.14159) (* pi (* r r)))"));
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
-let ast = parse(tokenize("(abs -4)"));
+let ast = parse(
+  tokenize("(begin (define area (lambda (r) (* PI (* r r) ) ) ) (area 4) )")
+);
+// (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
+// "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
+// let ast = parse(tokenize("(abs -4)"));
 console.log(ast);
 
 let res = eval(ast);
