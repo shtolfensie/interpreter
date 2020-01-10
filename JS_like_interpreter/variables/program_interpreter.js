@@ -23,8 +23,8 @@ const NumNode = token => {
   return { token, value: token.value, nodeType: "NumNode" };
 };
 
-const VarAssignNode = (id, value) => {
-  return { id, value, nodeType: "VarAssignNode" };
+const VarAssignNode = (idToken, valueToken) => {
+  return { idToken, valueToken, nodeType: "VarAssignNode" };
 };
 
 const IdNode = token => {
@@ -288,6 +288,8 @@ const Parser = program => {
 };
 
 let Interpreter = ast => {
+  let env = {};
+
   let visitMethods = [];
   visitMethods["visitBinOpNode"] = node => {
     if (node.op === PLUS) return visit(node.left) + visit(node.right);
@@ -305,6 +307,19 @@ let Interpreter = ast => {
     else return visit(node.expr);
   };
 
+  visitMethods["visitStatementListNode"] = node => {
+    node.statementArr.forEach(list => visit(list));
+  };
+
+  visitMethods["visitIdNode"] = node => {
+    return env[node.value] || "Error";
+  };
+
+  visitMethods["visitVarAssignNode"] = node => {
+    env[node.idToken.value] = visit(node.valueToken);
+    console.log(env);
+  };
+
   const visit = node => {
     console.log(node.nodeType);
 
@@ -320,13 +335,13 @@ try {
   // let res = Parser("7 + 3 * (10 / (12 / (3 + 1) - 1)) / (2 + 3) - 5 - 3 + (8)");
   // let res = Parser("(((8) * 2)) + 5 * (2) + 100");
 
-  let res = Parser("var variable = 10; 2 + 4; var bum = num + 6;");
+  let res = Parser("var variable = 10; var bum = num + 6;");
   // let res = Parser('var num = 10;');
   // console.log(res);
   res["statementArr"].forEach(statement => console.log(statement));
 
-  // let calculated = Interpreter(res);
-  // console.log(calculated);
+  let calculated = Interpreter(res);
+  console.log(calculated);
 } catch (e) {
   console.error(e);
 }
