@@ -6,10 +6,29 @@ var func = (e) => {
   return tst;
 }
 
-print func(4); // 15
-print tst; // undefined
+// wont use this syntax
+// print func(4); // 15
+// print tst; // undefined
 
 or ?
-
 print(func()); -- this one i think. it will make it easier. just define it as a function in the global env
 
+program: statementList
+statementList: statement+
+statement: (variableAssign | functionCall) SEMI | empty
+empty: 
+variableAssign: VAR variableDeclaration ASSIGN (expr | functionDeclaration)
+variableDeclaration: ID
+functionCall: ID LPAREN (expr (COMMA expr)*)* RPAREN
+functionDeclaration: LPAREN (variableDeclaration) RPAREN ARROW block
+block: LCURLY statementList RCURLY
+expr: term ((PLUS | MINUS) term)*
+term: factor ((TIMES | DIVIDED) factor)*
+factor: INTEGER | ID | LPAREN expr RPAREN | (PLUS | MINUS) factor
+
+need to add:
+if, elif
+while
+for
+return
+function call to variableAssign
