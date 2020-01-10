@@ -3,17 +3,18 @@ const tokenize = program => {
 
   for (let i = 0; i < program.length; i++) {
     if (program[i] === ";") {
-      let j = i;
-      while (program[j] !== "\n" && j < program.length) j++;
-      program = program.slice(0, i) + program.slice(j);
+      // comments start with at least one ';'
+      let j = i; // remember the position of the first ';'
+      while (program[j] !== "\n" && j < program.length) j++; // until we find a new line ot the program ends
+      program = program.slice(0, i) + program.slice(j); // slice out the comment
     }
   }
 
   return program
-    .replace(/(\(|\))/g, " $1 ")
-    .replace(/\r*\n*\t*/g, "")
-    .split(" ")
-    .filter(s => s.length !== 0);
+    .replace(/(\(|\))/g, " $1 ") // add spaces around all parentheses
+    .replace(/\r*\n*\t*/g, "") // discard all whitespace except
+    .split(" ") // split based on spaces, spaces will become empty strings
+    .filter(s => s.length !== 0); // remove empty strings
 };
 
 const parse = tokens => {
@@ -178,15 +179,16 @@ const eval = (ast, env) => {
     // the first node of the AST is define
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   } else if (ast[0] === "lambda") {
-    let vars = ast[1];
-    let body = ast[2];
+    // function declaration
+    let vars = ast[1]; // expected parameters, eg. function(*A*) {}
+    let body = ast[2]; // executable body of the function
 
     return function() {
       // works only with 'function' doesn't work with () =>
       return eval(
         body,
         environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
-      );
+      ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
     };
   } else if (ast[0] === "begin") {
     // evaluate all self contained top level blocks, pass down the env -> able to store variables
