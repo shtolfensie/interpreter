@@ -190,6 +190,8 @@ const eval = (ast, env) => {
         environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
       ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
     };
+  } else if (ast[0] === "if") {
+    return eval(ast[1]) === true ? eval(ast[2]) : eval(ast[3]);
   } else if (ast[0] === "begin") {
     // evaluate all self contained top level blocks, pass down the env -> able to store variables
     let res;
@@ -215,13 +217,15 @@ const eval = (ast, env) => {
 // let ast = parse(
 //   tokenize("(begin (define area (lambda (r t) (+ r t)) ) (area 4 6) )")
 // );
-// let ast = parse(tokenize("(begin (define r 30) (define pi 3.14159) (* pi (* r r)))"));
+// let ast = parse(tokenize("(begin (define r 30) (define sun_or_snow (lambda (sos) (if (= 4 6) (+ 5 5) (* 5 5)) ) )"));
+// let ast = parse(tokenize("(begin ((lambda (r) (* r r)) 6) )"));
+let ast = parse(tokenize("(begin (define r 5) (define r 6) (+ 1 r) )"));
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
-let ast = parse(
-  tokenize(
-    "(begin ;; this is a comment \n (define area (lambda (r) (* PI (* r r) ) ) )  (area 4) )"
-  )
-);
+// let ast = parse(
+//   tokenize(
+//     "(begin ;; this is a comment \n (define area (lambda (r) (* PI (* r r) ) ) )  (area 4) )"
+//   )
+// );
 // (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
 // let ast = parse(tokenize("(abs -4)"));
