@@ -1,0 +1,15 @@
+var num = 5;
+
+var func = (e) => {
+  print num;
+  var tst = num * 3;
+  return tst;
+}
+
+print func(4); // 15
+print tst; // undefined
+
+or ?
+
+print(func()); -- this one i think. it will make it easier. just define it as a function in the global env
+
