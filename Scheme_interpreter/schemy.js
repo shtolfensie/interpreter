@@ -1,5 +1,14 @@
 const tokenize = program => {
   // adds whitespace around brackets, strips all ws except space, splits input string based on spaces
+
+  for (let i = 0; i < program.length; i++) {
+    if (program[i] === ";") {
+      let j = i;
+      while (program[j] !== "\n" && j < program.length) j++;
+      program = program.slice(0, i) + program.slice(j);
+    }
+  }
+
   return program
     .replace(/(\(|\))/g, " $1 ")
     .replace(/\r*\n*\t*/g, "")
@@ -207,7 +216,9 @@ const eval = (ast, env) => {
 // let ast = parse(tokenize("(begin (define r 30) (define pi 3.14159) (* pi (* r r)))"));
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 let ast = parse(
-  tokenize("(begin (define area (lambda (r) (* PI (* r r) ) ) ) (area 4) )")
+  tokenize(
+    "(begin ;; this is a comment \n (define area (lambda (r) (* PI (* r r) ) ) )  (area 4) )"
+  )
 );
 // (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
