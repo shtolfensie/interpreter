@@ -143,6 +143,10 @@ const createGlobals = env => {
   env["not"] = a => !a;
   env["and"] = (a, b) => a && b;
   env["or"] = (a, b) => a || b;
+  env["car"] = list => list.slice(0, 1);
+  env["cdr"] = list => list.slice(1);
+  env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
+  // // env["cadr"] = list => list.slice(1, 2);
 
   // add basic math constants
   env["PI"] = Math.PI;
@@ -163,6 +167,7 @@ let globalEnv = createGlobals(
 );
 
 // console.log(globalEnv['+'](105, 47));
+console.log(globalEnv["cadr"]([1, 2, 3, 4, 5]));
 
 // evaluate AST returned from parser()
 // expects an AST node and the current env that is to be used for the evaluation
@@ -219,7 +224,8 @@ const eval = (ast, env) => {
 // );
 // let ast = parse(tokenize("(begin (define r 30) (define sun_or_snow (lambda (sos) (if (= 4 6) (+ 5 5) (* 5 5)) ) )"));
 // let ast = parse(tokenize("(begin ((lambda (r) (* r r)) 6) )"));
-let ast = parse(tokenize("(begin (define r 5) (define r 6) (+ 1 r) )"));
+// let ast = parse(tokenize("(begin (define r 5) (define r 6) (+ 1 r) )"));
+let ast = parse(tokenize("(begin (not (and (< 7 5) (= 7 7))))"));
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(
 //   tokenize(
