@@ -51,12 +51,7 @@ const parse = tokens => {
 const atom = token => {
   // return /(\d+( \.\d+)?)/.test(token) ? +token : String(token);
   let atom = /[^\d.]/.test(token) ? String(token) : +token; // 1.4.60 this breaks it!!!!
-  if (
-    typeof atom !== "number" &&
-    atom.length > 1 &&
-    atom.slice(0, 1) === "-" &&
-    !/[^\d.]/.test(atom.slice(1))
-  )
+  if (typeof atom !== "number" && atom.length > 1 && atom.slice(0, 1) === "-" && !/[^\d.]/.test(atom.slice(1)))
     atom = parseInt(atom); // find negative numbers
   return atom;
 };
@@ -130,10 +125,10 @@ const createGlobals = env => {
   jsMathFunctions.forEach(fun => (env[fun] = Math[fun]));
 
   // add all basic math functions, that are not in the Math object and other basic functions
-  env["+"] = (a, b) => a + b;
-  env["-"] = (a, b) => a - b;
-  env["*"] = (a, b) => a * b;
-  env["/"] = (a, b) => a / b;
+  env["+"] = (a, ...rest) => rest.reduce((res, b) => (res += b), a);
+  env["-"] = (a, ...rest) => rest.reduce((res, b) => (res -= b), rest.length ? a : -a);
+  env["*"] = (a, ...rest) => rest.reduce((res, b) => (res *= b), a);
+  env["/"] = (a, ...rest) => rest.reduce((res, b) => (res /= b), rest.length ? a : 1 / a);
   env[">"] = (a, b) => a > b;
   env["<"] = (a, b) => a < b;
   env[">="] = (a, b) => a >= b;
@@ -141,8 +136,8 @@ const createGlobals = env => {
   env["="] = (a, b) => a === b;
   env["equal?"] = (a, b) => a === b;
   env["not"] = a => !a;
-  env["and"] = (a, b) => a && b;
-  env["or"] = (a, b) => a || b;
+  env["and"] = (a, ...rest) => rest.reduce((res, b) => res && b, a);
+  env["or"] = (a, ...rest) => rest.reduce((res, b) => res || b, a);
   env["car"] = list => list.slice(0, 1);
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
@@ -162,12 +157,11 @@ const createGlobals = env => {
   return env;
 };
 
-let globalEnv = createGlobals(
-  environment({ varNames: [], args: [], outer: null })
-);
+let globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null }));
 
 // console.log(globalEnv['+'](105, 47));
 // console.log(globalEnv["cadr"]([1, 2, 3, 4, 5]));
+// console.log(globalEnv["or"](false, false, true, false));
 
 // evaluate AST returned from parser()
 // expects an AST node and the current env that is to be used for the evaluation
@@ -226,13 +220,13 @@ const eval = (ast, env) => {
 // let ast = parse(tokenize("(begin ((lambda (r) (* r r)) 6) )"));
 // let ast = parse(tokenize("(begin (define r 5) (define r 6) (+ 1 r) )"));
 // let ast = parse(tokenize("(begin (not (and (< 7 5) (= 7 7))))"));
-let ast = parse(
-  tokenize(`(begin 
-  (define fact
-    (lambda (n)
-    (if (= n 0) 1 (* n (fact (- n 1))) ) ) )
-  (fact 10))`)
-);
+// let ast = parse(
+//   tokenize(`( begin (define fact
+//     (lambda (n)
+//       (if (= n 0)                      ;This is another comment:
+//           1                            ;Base case: return 1
+//           (* n (fact (- n 1)))))) (fact 10))`)
+// );
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(
 //   tokenize(
@@ -241,7 +235,7 @@ let ast = parse(
 // );
 // (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
-// let ast = parse(tokenize("(abs -4)"));
+let ast = parse(tokenize("(> 4 5)"));
 // console.log(ast);
 console.log(JSON.stringify(ast));
 
