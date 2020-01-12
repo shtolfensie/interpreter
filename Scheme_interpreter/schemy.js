@@ -167,7 +167,7 @@ let globalEnv = createGlobals(
 );
 
 // console.log(globalEnv['+'](105, 47));
-console.log(globalEnv["cadr"]([1, 2, 3, 4, 5]));
+// console.log(globalEnv["cadr"]([1, 2, 3, 4, 5]));
 
 // evaluate AST returned from parser()
 // expects an AST node and the current env that is to be used for the evaluation
@@ -196,7 +196,7 @@ const eval = (ast, env) => {
       ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
     };
   } else if (ast[0] === "if") {
-    return eval(ast[1]) === true ? eval(ast[2]) : eval(ast[3]);
+    return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
   } else if (ast[0] === "begin") {
     // evaluate all self contained top level blocks, pass down the env -> able to store variables
     let res;
@@ -225,7 +225,14 @@ const eval = (ast, env) => {
 // let ast = parse(tokenize("(begin (define r 30) (define sun_or_snow (lambda (sos) (if (= 4 6) (+ 5 5) (* 5 5)) ) )"));
 // let ast = parse(tokenize("(begin ((lambda (r) (* r r)) 6) )"));
 // let ast = parse(tokenize("(begin (define r 5) (define r 6) (+ 1 r) )"));
-let ast = parse(tokenize("(begin (not (and (< 7 5) (= 7 7))))"));
+// let ast = parse(tokenize("(begin (not (and (< 7 5) (= 7 7))))"));
+let ast = parse(
+  tokenize(`(begin 
+  (define fact
+    (lambda (n)
+    (if (= n 0) 1 (* n (fact (- n 1))) ) ) )
+  (fact 10))`)
+);
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(
 //   tokenize(
@@ -235,7 +242,8 @@ let ast = parse(tokenize("(begin (not (and (< 7 5) (= 7 7))))"));
 // (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
 // let ast = parse(tokenize("(abs -4)"));
-console.log(ast);
+// console.log(ast);
+console.log(JSON.stringify(ast));
 
 let res = eval(ast);
 console.log(res);
