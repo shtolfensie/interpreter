@@ -42,7 +42,8 @@ const parse = tokens => {
     // tokens.pop(); // remove one closing ) from the end
 
     return nextTokens; // return the block
-  } else {
+  }
+  else {
     return atom(tokens[0]); // if nothing else, it is an atom, return it
   }
 };
@@ -66,7 +67,8 @@ const environment = ({ varNames, args, outer }) => {
     if (env.hasOwnProperty(variable)) {
       // if env has a variable, return it
       return env;
-    } else {
+    }
+    else {
       // otherwise, try looking for it in the outer env
       return outer.find(variable);
     }
@@ -84,42 +86,17 @@ const environment = ({ varNames, args, outer }) => {
 // create the global environment
 const createGlobals = env => {
   // create a list of all the functions in Math and add them to the env
+  // prettier-ignore
   const jsMathFunctions = [
-    "abs",
-    "acos",
-    "acosh",
-    "asin",
-    "asinh",
-    "atan",
-    "atan2",
-    "atanh",
-    "cbrt",
-    "ceil",
-    "clz32",
-    "cos",
-    "cosh",
-    "exp",
-    "expm1",
-    "floor",
-    "fround",
-    "hypot",
-    "imul",
-    "log",
-    "log10",
-    "log1p",
-    "log2",
-    "max",
-    "min",
-    "pow",
-    "random",
-    "round",
-    "sign",
-    "sin",
-    "sinh",
-    "sqrt",
-    "tan",
-    "tanh",
-    "trunc"
+    "abs", "acos", "acosh", "asin",
+    "asinh", "atan", "atan2", "atanh",
+    "cbrt", "ceil", "clz32", "cos",
+    "cosh", "exp", "expm1", "floor",
+    "fround", "hypot", "imul", "log",
+    "log10", "log1p", "log2", "max",
+    "min", "pow", "random", "round",
+    "sign", "sin", "sinh", "sqrt",
+    "tan", "tanh", "trunc"
   ];
 
   jsMathFunctions.forEach(fun => (env[fun] = Math[fun]));
@@ -173,13 +150,16 @@ const eval = (ast, env) => {
   if (typeof ast === "string") {
     // if the entire AST node is a string, it is a variable
     return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
-  } else if (typeof ast === "number") {
+  }
+  else if (typeof ast === "number") {
     // it the entire AST node is a constant number, return it
     return ast;
-  } else if (ast[0] === "define") {
+  }
+  else if (ast[0] === "define") {
     // the first node of the AST is define
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
-  } else if (ast[0] === "lambda") {
+  }
+  else if (ast[0] === "lambda") {
     // function declaration
     let vars = ast[1]; // expected parameters, eg. function(*A*) {}
     let body = ast[2]; // executable body of the function
@@ -191,16 +171,19 @@ const eval = (ast, env) => {
         environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
       ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
     };
-  } else if (ast[0] === "if") {
+  }
+  else if (ast[0] === "if") {
     return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
-  } else if (ast[0] === "begin") {
+  }
+  else if (ast[0] === "begin") {
     // evaluate all self contained top level blocks, pass down the env -> able to store variables
     let res;
     for (let i = 1; i < ast.length; i++) {
       res = eval(ast[i], env);
     }
     return res;
-  } else {
+  }
+  else {
     // everything else is a function call
     let args = [];
     for (let i = 0; i < ast.length; i++) {
