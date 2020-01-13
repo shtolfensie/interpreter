@@ -15,7 +15,7 @@
 ### Expressions
 
 - [x] if statements
-- [ ] change basic math and logic operators to accept more than two args
+- [x] change basic math and logic operators to accept more than two args
 - [ ] cond - ? maybe. don't know yet
 - [ ] lambda
   - [x] named
