@@ -143,6 +143,8 @@ const createGlobals = env => {
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
   // // env["cadr"] = list => list.slice(1, 2);
 
+  env["display"] = a => console.log(a);
+
   // add basic math constants
   env["PI"] = Math.PI;
   env["E"] = Math.E;
@@ -235,7 +237,7 @@ const eval = (ast, env) => {
 // );
 // (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
-let ast = parse(tokenize("(> 4 5)"));
+let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
 console.log(JSON.stringify(ast));
 
