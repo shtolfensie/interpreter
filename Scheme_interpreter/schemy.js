@@ -144,7 +144,6 @@ let globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null 
 
 // evaluate AST returned from parser()
 // expects an AST node and the current env that is to be used for the evaluation
-// next will implement if statements, lambda statements, set! and quote
 const eval = (ast, env) => {
   env = env || globalEnv;
   if (typeof ast === "string") {
@@ -157,6 +156,7 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
+    if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1][1], ast[1].slice(1), env);
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
   else if (ast[0] === "lambda") {
@@ -164,13 +164,7 @@ const eval = (ast, env) => {
     let vars = ast[1]; // expected parameters, eg. function(*A*) {}
     let body = ast[2]; // executable body of the function
 
-    return function() {
-      // works only with 'function' doesn't work with () =>
-      return eval(
-        body,
-        environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
-      ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
-    };
+    return createLambda(vars, body, env);
   }
   else if (ast[0] === "if") {
     return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
@@ -196,6 +190,16 @@ const eval = (ast, env) => {
   }
 };
 
+const createLambda = (vars, body, env) => {
+  return function() {
+    // works only with 'function' doesn't work with () =>
+    return eval(
+      body,
+      environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
+    ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
+  };
+};
+
 // let ast = parse(tokenize("(begin (define r 1) (define t (- 5 2)) (+ r (* t 2)))"));
 // let ast = parse(tokenize("(+ 3 4)"));
 // let ast = parse(
@@ -210,8 +214,20 @@ const eval = (ast, env) => {
 //     (lambda (n)
 //       (if (= n 0)                      ;This is another comment:
 //           1                            ;Base case: return 1
-//           (* n (fact (- n 1)))))) (fact 10))`)
+//           (* n (fact (- n 1)))))) (fact 3))`)
 // );
+// let ast = parse(
+//   tokenize(`( begin (define (fact n)
+//       (if (= n 0)                      ;This is another comment:
+//           1                            ;Base case: return 1
+//           (* n (fact (- n 1)))))) (fact 3))`)
+// );
+let ast = parse(
+  tokenize(`
+(begin (define square-diff  
+  (lambda (x1 x2)
+          (* (- x1 x2) (- x1 x2)))) (square-diff 8 3))`)
+);
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(
 //   tokenize(
@@ -220,7 +236,7 @@ const eval = (ast, env) => {
 // );
 // (begin (define area (lambda (r)  (* r r) ) ) (area 4) )
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
-let ast = parse(tokenize("(display 4)"));
+// let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
 console.log(JSON.stringify(ast));
 
