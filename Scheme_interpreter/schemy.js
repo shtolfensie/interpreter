@@ -159,6 +159,9 @@ const eval = (ast, env) => {
     if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1][1], ast[1].slice(1), env);
     env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
+  else if (ast[0] === "set!") {
+    env[eval(ast[1], env) ? ast[1] : null] = eval(ast[2], env);
+  }
   else if (ast[0] === "lambda") {
     // function declaration
     let vars = ast[1]; // expected parameters, eg. function(*A*) {}
@@ -224,9 +227,12 @@ const createLambda = (vars, body, env) => {
 // );
 let ast = parse(
   tokenize(`
-(begin (define square-diff  
-  (lambda (x1 x2)
-          (* (- x1 x2) (- x1 x2)))) (square-diff 8 3))`)
+    (define x 10)
+    ;(display x)\n
+    x
+    (define x (+ 1 x))
+    x
+    `)
 );
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(
