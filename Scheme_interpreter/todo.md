@@ -5,6 +5,7 @@
 - [ ] better block (paren) handling and missing detection
 - [ ] ? maybe give eval() the arg of from what keyword it is comming? like if we are evaling something after 'define', eval will know it
 - [ ] create an error function
+- [ ] evaluate a program composed of multiple S-expressions without the need for a begin
 
 ### Data
 
