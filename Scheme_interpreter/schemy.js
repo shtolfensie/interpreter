@@ -156,8 +156,8 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
-    if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1][1], ast[1].slice(1), env);
-    env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
+    if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1].slice(1), ast[2], env);
+    else env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
   else if (ast[0] === "set!") {
     env[eval(ast[1], env) ? ast[1] : null] = eval(ast[2], env);
@@ -221,19 +221,19 @@ const createLambda = (vars, body, env) => {
 // );
 // let ast = parse(
 //   tokenize(`( begin (define (fact n)
-//       (if (= n 0)                      ;This is another comment:
-//           1                            ;Base case: return 1
-//           (* n (fact (- n 1)))))) (fact 3))`)
+//   (if (= n 0)                      ;This is another comment:
+//       1                            ;Base case: return 1
+//       (* n (fact (- n 1))))) (fact 3))`)
 // );
 let ast = parse(
-  tokenize(`
-    (define x 10)
-    ;(display x)\n
-    x
-    (define x (+ 1 x))
-    x
+  tokenize(`(begin
+    (define (foo) 1)
+    (foo)
+    )
+
     `)
 );
+// );
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(
 //   tokenize(
