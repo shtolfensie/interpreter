@@ -9,12 +9,12 @@
 
 ### Data
 
-- [ ] lists
+- [x] lists
 - [ ] strings
   - [ ] don't remove whitespace from strings
 - [ ] characters
 - [ ] vectors ?
-- [ ] #t and #f
+- [x] #t and #f
 
 ### Expressions
 
@@ -41,7 +41,7 @@
 #### Syntax structures
 
 - [ ] do block?
-- [ ] set!
+- [x] set!
 - [ ] let
 - [ ] let\*
   - defined variables are accessible to other variables we are defining

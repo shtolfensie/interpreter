@@ -11,7 +11,7 @@ const tokenize = program => {
   }
 
   return program
-    .replace(/(\(|\))/g, " $1 ") // add spaces around all parentheses
+    .replace(/(\(|\)|\')/g, " $1 ") // add spaces around all parentheses
     .replace(/\r*\n*\t*/g, "") // discard all whitespace except
     .split(" ") // split based on spaces, spaces will become empty strings
     .filter(s => s.length !== 0); // remove empty strings
@@ -28,6 +28,14 @@ const parse = tokens => {
   if (tokens[0] === ")") {
     console.error("Unexpected end of file");
     return 2;
+  }
+
+  if (tokens[0] === "'") {
+    tokens.shift();
+    let nextTokens = [ "quote" ];
+    nextTokens.push(parse(tokens));
+
+    return nextTokens;
   }
 
   // start a new block
@@ -112,12 +120,16 @@ const createGlobals = env => {
   env["<="] = (a, b) => a <= b;
   env["="] = (a, b) => a === b;
   env["equal?"] = (a, b) => a === b;
+
   env["not"] = a => !a;
   env["and"] = (a, ...rest) => rest.reduce((res, b) => res && b, a);
   env["or"] = (a, ...rest) => rest.reduce((res, b) => res || b, a);
-  env["car"] = list => list.slice(0, 1);
+  env["car"] = list => list[0];
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
+  env["list"] = (...list) => list;
+  env["cons"] = (n, list) => [ n, ...list ];
+  env["length"] = list => list.length;
   // // env["cadr"] = list => list.slice(1, 2);
 
   env["display"] = a => console.log(a);
@@ -132,6 +144,9 @@ const createGlobals = env => {
   env["PI"] = Math.PI;
   env["SQRT1_2"] = Math.SQRT1_2;
   env["SQRT2"] = Math.SQRT2;
+
+  env["#t"] = true;
+  env["#f"] = false;
 
   return env;
 };
@@ -153,6 +168,9 @@ const eval = (ast, env) => {
   else if (typeof ast === "number") {
     // it the entire AST node is a constant number, return it
     return ast;
+  }
+  else if (ast[0] === "quote") {
+    return ast[1];
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
@@ -226,16 +244,16 @@ const createLambda = (vars, body, env) => {
 //       (* n (fact (- n 1))))) (fact 3))`)
 // );
 let ast = parse(
-  tokenize(`(begin
-    (define (foo) 1)
-    (foo)
-    )
-
-    `)
+  tokenize(`(begin (define x 10)
+(display x)
+(set! x (+ x 1))
+(display x)
+(set! y 1)
+)`)
 );
 // );
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
-// let ast = parse(
+// let ast = parse(s
 //   tokenize(
 //     "(begin ;; this is a comment \n (define area (lambda (r) (* PI (* r r) ) ) )  (area 4) )"
 //   )
