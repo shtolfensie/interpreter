@@ -6,6 +6,8 @@
 - [ ] ? maybe give eval() the arg of from what keyword it is comming? like if we are evaling something after 'define', eval will know it
 - [ ] create an error function
 - [ ] evaluate a program composed of multiple S-expressions without the need for a begin
+- [x] repl
+- [ ] support bracket [] syntax in let and cond for ex
 
 ### Data
 

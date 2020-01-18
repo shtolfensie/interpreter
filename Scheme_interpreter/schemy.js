@@ -1,3 +1,5 @@
+const readline = require("readline");
+
 const tokenize = program => {
   // adds whitespace around brackets, strips all ws except space, splits input string based on spaces
 
@@ -32,7 +34,7 @@ const parse = tokens => {
 
   if (tokens[0] === "'") {
     tokens.shift();
-    let nextTokens = [ "quote" ];
+    let nextTokens = ["quote"];
     nextTokens.push(parse(tokens));
 
     return nextTokens;
@@ -128,7 +130,7 @@ const createGlobals = env => {
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
   env["list"] = (...list) => list;
-  env["cons"] = (n, list) => [ n, ...list ];
+  env["cons"] = (n, list) => [n, ...list];
   env["length"] = list => list.length;
   // // env["cadr"] = list => list.slice(1, 2);
 
@@ -212,7 +214,7 @@ const eval = (ast, env) => {
 };
 
 const createLambda = (vars, body, env) => {
-  return function() {
+  return function () {
     // works only with 'function' doesn't work with () =>
     return eval(
       body,
@@ -220,6 +222,37 @@ const createLambda = (vars, body, env) => {
     ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
   };
 };
+
+const repl = () => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.setPrompt("> ");
+  rl.prompt();
+
+  rl.on("line", input => {
+    if (!input) {
+      rl.prompt();
+      return;
+    }
+    let ast = parse(tokenize(input));
+    console.log(`Received: ${input}`, ast);
+    let res = eval(ast);
+    res ? console.log(res) : null;
+
+    rl.prompt();
+  });
+
+  // rl.on("SIGINT", () => {
+  //   rl.question("Are you sure you want to exit? ", answer => {
+  //     if (answer.match(/^y(es)?$/i)) rl.pause();
+  //   });
+  // });
+};
+
+repl();
 
 // let ast = parse(tokenize("(begin (define r 1) (define t (- 5 2)) (+ r (* t 2)))"));
 // let ast = parse(tokenize("(+ 3 4)"));
@@ -243,14 +276,11 @@ const createLambda = (vars, body, env) => {
 //       1                            ;Base case: return 1
 //       (* n (fact (- n 1))))) (fact 3))`)
 // );
-let ast = parse(
-  tokenize(`(begin (define x 10)
-(display x)
-(set! x (+ x 1))
-(display x)
-(set! y 1)
-)`)
-);
+// let ast = parse(
+//   tokenize(`(begin
+//     (display "testahoj")
+// )`)
+// );
 // );
 // let ast = parse(tokenize("(begin (define r 30) (* PI (* r r)))"));
 // let ast = parse(s
@@ -262,10 +292,10 @@ let ast = parse(
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
 // let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
-console.log(JSON.stringify(ast));
+// console.log(JSON.stringify(ast));
 
-let res = eval(ast);
-console.log(res);
+// let res = eval(ast);
+// console.log(res);
 
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))
