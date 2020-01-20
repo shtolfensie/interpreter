@@ -34,7 +34,7 @@ const parse = tokens => {
 
   if (tokens[0] === "'") {
     tokens.shift();
-    let nextTokens = ["quote"];
+    let nextTokens = [ "quote" ];
     nextTokens.push(parse(tokens));
 
     return nextTokens;
@@ -130,11 +130,16 @@ const createGlobals = env => {
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
   env["list"] = (...list) => list;
-  env["cons"] = (n, list) => [n, ...list];
+  env["cons"] = (n, list) => [ n, ...list ];
   env["length"] = list => list.length;
   // // env["cadr"] = list => list.slice(1, 2);
 
   env["display"] = a => console.log(a);
+  env["apply"] = (callable, ...args) => {
+    let list = args.pop();
+    args = [ ...args, ...list ];
+    return callable.apply(null, args);
+  };
 
   // add basic math constants
   env["PI"] = Math.PI;
@@ -214,8 +219,8 @@ const eval = (ast, env) => {
 };
 
 const createLambda = (vars, body, env) => {
-  return function () {
-    // works only with 'function' doesn't work with () =>
+  // works only with 'function' doesn't work with () =>
+  return function() {
     return eval(
       body,
       environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function

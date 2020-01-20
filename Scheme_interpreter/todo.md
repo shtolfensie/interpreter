@@ -38,7 +38,7 @@
     > (avg 1 2 3)
     2
     ``` 
-- [ ] quoted object evaluates to itself
+- [x] quoted object evaluates to itself
 
 #### Syntax structures
 
