@@ -1,7 +1,18 @@
 const readline = require("readline");
 
+const getRandomId = (len = 10) => [ ...Array(len) ].map(i => (~~(Math.random() * 36)).toString(36)).join("");
+
+let stringIdObj = {};
 const tokenize = program => {
   // adds whitespace around brackets, strips all ws except space, splits input string based on spaces
+
+  program = program.replace(/"(.*?)"/g, match => {
+    // if there is a match for text between doublequotes, replace it
+    let randIdRe = RegExp(getRandomId());
+    while (randIdRe.test(program)) randIdRe = RegExp(getRandomId()); // if this random string is already present in the program, get a new one
+    stringIdObj[randIdRe.source] = match; // store the original under the randomId key
+    return randIdRe.source; // return the randomId string that replaces the original in the program
+  });
 
   for (let i = 0; i < program.length; i++) {
     if (program[i] === ";") {
@@ -64,6 +75,7 @@ const atom = token => {
   let atom = /[^\d.]/.test(token) ? String(token) : +token; // 1.4.60 this breaks it!!!!
   if (typeof atom !== "number" && atom.length > 1 && atom.slice(0, 1) === "-" && !/[^\d.]/.test(atom.slice(1)))
     atom = parseInt(atom); // find negative numbers
+  if (stringIdObj.hasOwnProperty(atom)) atom = stringIdObj[atom]; // replace placeholder id with the original string
   return atom;
 };
 
@@ -168,6 +180,8 @@ let globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null 
 // expects an AST node and the current env that is to be used for the evaluation
 const eval = (ast, env) => {
   env = env || globalEnv;
+  if (ast[0] === '"') return ast; // if ast is a string, return it
+  if (ast[0] === "#" && ast[1] === "\\") return ast; // if ast is a char, return it
   if (typeof ast === "string") {
     // if the entire AST node is a string, it is a variable
     return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
@@ -177,6 +191,7 @@ const eval = (ast, env) => {
     return ast;
   }
   else if (ast[0] === "quote") {
+    // if the first alement is 'quote', return the second one
     return ast[1];
   }
   else if (ast[0] === "define") {
@@ -185,7 +200,7 @@ const eval = (ast, env) => {
     else env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
   else if (ast[0] === "set!") {
-    env[eval(ast[1], env) ? ast[1] : null] = eval(ast[2], env);
+    env.find(ast[1])[ast[1]] = eval(ast[2], env); // find the env where the variable is, and modify it
   }
   else if (ast[0] === "lambda") {
     // function declaration
@@ -243,7 +258,6 @@ const repl = () => {
       return;
     }
     let ast = parse(tokenize(input));
-    console.log(`Received: ${input}`, ast);
     let res = eval(ast);
     res ? console.log(res) : null;
 
@@ -259,7 +273,17 @@ const repl = () => {
 
 repl();
 
+// let ast = parse(
+//   tokenize(
+//     "(begin (define (count item L) (if (> (length L) 0) (begin (display L) (+ (if (equal? item (car L)) 1 0) (count item (cdr L)) ) ) 0 )) (count 0 '(0 1 2 0 3 0)) )"
+//   )
+// );
 // let ast = parse(tokenize("(begin (define r 1) (define t (- 5 2)) (+ r (* t 2)))"));
+// let ast = parse(
+//   tokenize(
+//     "(begin (define make-account (lambda (balance) (lambda (amt) (begin (set! balance (+ balance amt))  balance)))) (define account1 (make-account 100.00)) (account1 -20) (account1 -30))"
+//   )
+// );
 // let ast = parse(tokenize("(+ 3 4)"));
 // let ast = parse(
 //   tokenize("(begin (define area (lambda (r t) (+ r t)) ) (area 4 6) )")

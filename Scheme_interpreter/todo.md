@@ -12,9 +12,9 @@
 ### Data
 
 - [x] lists
-- [ ] strings
-  - [ ] don't remove whitespace from strings
-- [ ] characters
+- [x] strings
+  - [x] don't remove whitespace from strings
+- [x] characters
 - [ ] vectors ?
 - [x] #t and #f
 
