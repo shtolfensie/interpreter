@@ -1,83 +1,144 @@
 const readline = require("readline");
 
-const getRandomId = (len = 10) => [ ...Array(len) ].map(i => (~~(Math.random() * 36)).toString(36)).join("");
+const QUOTE = 'quote';
 
-let stringIdObj = {};
-const tokenize = program => {
-  // adds whitespace around brackets, strips all ws except space, splits input string based on spaces
+// const getRandomId = (len = 10) => [ ...Array(len) ].map(i => (~~(Math.random() * 36)).toString(36)).join("");
 
-  program = program.replace(/"(.*?)"/g, match => {
-    // if there is a match for text between doublequotes, replace it
-    let randIdRe = RegExp(getRandomId());
-    while (randIdRe.test(program)) randIdRe = RegExp(getRandomId()); // if this random string is already present in the program, get a new one
-    stringIdObj[randIdRe.source] = match; // store the original under the randomId key
-    return randIdRe.source; // return the randomId string that replaces the original in the program
-  });
+// let stringIdObj = {};
+// const tokenize = program => {
+//   // adds whitespace around brackets, strips all ws except space, splits input string based on spaces
 
-  for (let i = 0; i < program.length; i++) {
-    if (program[i] === ";") {
-      // comments start with at least one ';'
-      let j = i; // remember the position of the first ';'
-      while (program[j] !== "\n" && j < program.length) j++; // until we find a new line ot the program ends
-      program = program.slice(0, i) + program.slice(j); // slice out the comment
+//   program = program.replace(/"(.*?)"/g, match => {
+//     // if there is a match for text between doublequotes, replace it
+//     let randIdRe = RegExp(getRandomId());
+//     while (randIdRe.test(program)) randIdRe = RegExp(getRandomId()); // if this random string is already present in the program, get a new one
+//     stringIdObj[randIdRe.source] = match; // store the original under the randomId key
+//     return randIdRe.source; // return the randomId string that replaces the original in the program
+//   });
+
+//   for (let i = 0; i < program.length; i++) {
+//     if (program[i] === ";") {
+//       // comments start with at least one ';'
+//       let j = i; // remember the position of the first ';'
+//       while (program[j] !== "\n" && j < program.length) j++; // until we find a new line ot the program ends
+//       program = program.slice(0, i) + program.slice(j); // slice out the comment
+//     }
+//   }
+
+//   return program
+//     .replace(/(\(|\)|\')/g, " $1 ") // add spaces around all parentheses
+//     .replace(/\r*\n*\t*/g, "") // discard all whitespace except
+//     .split(" ") // split based on spaces, spaces will become empty strings
+//     .filter(s => s.length !== 0); // remove empty strings
+// };
+
+// const parse = tokens => {
+//   // checks for an empty imput string
+//   if (tokens.length === 0) {
+//     console.error("No tokens to parse");
+//     return 1;
+//   }
+
+//   // checks for incorrect EOF
+//   if (tokens[0] === ")") {
+//     console.error("Unexpected end of file");
+//     return 2;
+//   }
+
+//   if (tokens[0] === "'") {
+//     tokens.shift();
+//     let nextTokens = [ "quote" ];
+//     nextTokens.push(parse(tokens));
+
+//     return nextTokens;
+//   }
+
+//   // start a new block
+//   if (tokens[0] === "(") {
+//     tokens.shift(); // remove the starting (
+//     let nextTokens = []; // create an array for storing a new block
+//     // until we reach the end of the block
+//     while (tokens[0] !== ")" && tokens.length) {
+//       nextTokens.push(parse(tokens)); // parse the block and push it to the array
+//       tokens.shift(); // remove the token we just parsed from the start
+//     }
+//     // tokens.pop(); // remove one closing ) from the end
+
+//     return nextTokens; // return the block
+//   }
+//   else {
+//     return atom(tokens[0]); // if nothing else, it is an atom, return it
+//   }
+// };
+
+// // turns numbers into numbers (int, float), everything else is a string
+// const atom = token => {
+//   // return /(\d+( \.\d+)?)/.test(token) ? +token : String(token);
+//   let atom = /[^\d.]/.test(token) ? String(token) : +token; // 1.4.60 this breaks it!!!!
+//   if (typeof atom !== "number" && atom.length > 1 && atom.slice(0, 1) === "-" && !/[^\d.]/.test(atom.slice(1)))
+//     atom = parseInt(atom); // find negative numbers
+//   if (stringIdObj.hasOwnProperty(atom)) atom = stringIdObj[atom]; // replace placeholder id with the original string
+//   return atom;
+// };
+
+const error = (msg = 'Syntax error') => { throw msg; }
+
+const quoteList = { "'": QUOTE }
+
+// (define x 10)
+const Parser = program => {
+  let lines = program.split('\n');
+  let line = 0;
+
+  const parse = token => {
+
+    if (token === '(') {
+      let next_tokens = [], token;
+      while (true) {
+        token = get_next_token();
+        if (token === ')') return next_tokens;
+        else next_tokens.push(parse(token));
+      }
     }
+    else if (token === ')') error('Unexpected end of s-expression');
+    else if (quoteList.hasOwnProperty(token)) return [quoteList[token], parse(get_next_token())];
+    else if (token === 'EOF') error('Unexpected end of file');
+    else return atom(token);
   }
 
-  return program
-    .replace(/(\(|\)|\')/g, " $1 ") // add spaces around all parentheses
-    .replace(/\r*\n*\t*/g, "") // discard all whitespace except
-    .split(" ") // split based on spaces, spaces will become empty strings
-    .filter(s => s.length !== 0); // remove empty strings
-};
+  const get_next_token = () => {
+    const tokenizerRegEx = /\s*(,@|[('`,)]|"(?:[\\].|[^\\"])*"|;.*|[^\s('"`,;)]*)(.*)/;
+    let token;
 
-const parse = tokens => {
-  // checks for an empty imput string
-  if (tokens.length === 0) {
-    console.error("No tokens to parse");
-    return 1;
-  }
-
-  // checks for incorrect EOF
-  if (tokens[0] === ")") {
-    console.error("Unexpected end of file");
-    return 2;
-  }
-
-  if (tokens[0] === "'") {
-    tokens.shift();
-    let nextTokens = [ "quote" ];
-    nextTokens.push(parse(tokens));
-
-    return nextTokens;
-  }
-
-  // start a new block
-  if (tokens[0] === "(") {
-    tokens.shift(); // remove the starting (
-    let nextTokens = []; // create an array for storing a new block
-    // until we reach the end of the block
-    while (tokens[0] !== ")" && tokens.length) {
-      nextTokens.push(parse(tokens)); // parse the block and push it to the array
-      tokens.shift(); // remove the token we just parsed from the start
+    while (true) {
+      if (lines[line] === '') line++;
+      if (!lines[line] || line > lines.length - 1) return 'EOF';
+      [, token, lines[line]] = tokenizerRegEx.exec(lines[line]);
+      if (token !== '' && token[0] !== ';') return token;
     }
-    // tokens.pop(); // remove one closing ) from the end
 
-    return nextTokens; // return the block
   }
-  else {
-    return atom(tokens[0]); // if nothing else, it is an atom, return it
-  }
-};
 
-// turns numbers into numbers (int, float), everything else is a string
+  let tokens = [];
+  do {
+    do {
+      let token = get_next_token();
+      if (token) tokens.push(parse(token));
+    } while (lines[line] !== '');
+  } while (lines[line + 1] !== '' && line + 1 < lines.length)
+  if (tokens) return tokens;
+  else return 'EOF'
+
+}
+
 const atom = token => {
-  // return /(\d+( \.\d+)?)/.test(token) ? +token : String(token);
-  let atom = /[^\d.]/.test(token) ? String(token) : +token; // 1.4.60 this breaks it!!!!
-  if (typeof atom !== "number" && atom.length > 1 && atom.slice(0, 1) === "-" && !/[^\d.]/.test(atom.slice(1)))
-    atom = parseInt(atom); // find negative numbers
-  if (stringIdObj.hasOwnProperty(atom)) atom = stringIdObj[atom]; // replace placeholder id with the original string
-  return atom;
-};
+  if (token[0] === "\"") return token;
+  if (!Number.isNaN(+token)) return +token;
+  return token;
+
+}
+
+
 
 const environment = ({ varNames, args, outer }) => {
   // create an environment object
@@ -142,14 +203,14 @@ const createGlobals = env => {
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
   env["list"] = (...list) => list;
-  env["cons"] = (n, list) => [ n, ...list ];
+  env["cons"] = (n, list) => [n, ...list];
   env["length"] = list => list.length;
   // // env["cadr"] = list => list.slice(1, 2);
 
   env["display"] = a => console.log(a);
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
-    args = [ ...args, ...list ];
+    args = [...args, ...list];
     return callable.apply(null, args);
   };
 
@@ -235,7 +296,7 @@ const eval = (ast, env) => {
 
 const createLambda = (vars, body, env) => {
   // works only with 'function' doesn't work with () =>
-  return function() {
+  return function () {
     return eval(
       body,
       environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
@@ -249,6 +310,7 @@ const repl = () => {
     output: process.stdout
   });
 
+  console.log("Welcome to Schemy!");
   rl.setPrompt("> ");
   rl.prompt();
 
@@ -257,9 +319,12 @@ const repl = () => {
       rl.prompt();
       return;
     }
-    let ast = parse(tokenize(input));
-    let res = eval(ast);
-    res ? console.log(res) : null;
+
+    let ast = Parser(input);
+
+    let res = ast.map(node => eval(node)).pop();
+
+    res !== undefined ? console.log(res) : null;
 
     rl.prompt();
   });
@@ -271,7 +336,18 @@ const repl = () => {
   // });
 };
 
-repl();
+// repl();
+
+let ast = Parser(`(define x 10) display (x)
+  (< x 5)`);
+
+// let ast = Parser(`
+//   (define x 10)
+//   x
+//   (define str "Hello th\\"ere")
+//   (display str)
+//   (define (double c) (begin (define x 45) (+ c x) ))
+//   (double x)`);
 
 // let ast = parse(
 //   tokenize(
@@ -321,10 +397,10 @@ repl();
 // "(begin (define area (lambda (r) (* PI (* r r)))) (area 4))"
 // let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
-// console.log(JSON.stringify(ast));
 
-// let res = eval(ast);
-// console.log(res);
+console.log(JSON.stringify(ast));
+let res = ast.map(node => eval(node)).pop();
+res !== undefined ? console.log(res) : null;
 
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))
