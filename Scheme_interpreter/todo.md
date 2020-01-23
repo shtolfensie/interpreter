@@ -14,6 +14,17 @@
 - [x] lists
 - [x] strings
   - [x] don't remove whitespace from strings
+  - [ ] include escaped quotes and support multiline strings and escaped backslashes
+  - [ ] allow for #\space to mean " "
+  - [ ] make-string k [char] : (make-string 10 #\x) => "xxxxxxxxxx"
+  - [ ] string char...
+  - [ ] list->string; string->list
+  - [ ] string?
+  - [ ] string-length
+  - [ ] string-null? : (string-null? "") => #t
+  - [ ] string-ref string k : (string-ref "Hello" 1) => #\e
+  - [ ] string-set! string k char : (string-set! "Dog" 0 #\L) => "Log"
+  - [ ] string=?; string-ci=?; string<?; string>?; string<=?; string>=?; string-ci<?; stirng-ci>?; string-ci<=?; string-ci>=?;
 - [x] characters
 - [ ] vectors ?
 - [x] #t and #f
