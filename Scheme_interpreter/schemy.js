@@ -1,12 +1,14 @@
 const readline = require("readline");
 
-const QUOTE = "quote";
+const QUOTE = "quote",
+      QUASI_QUOTE = "quasiquote",
+      UNQUOTE = "unquote";
 
 const error = (msg = "Syntax error") => {
   throw msg;
 };
 
-const quoteList = { "'": QUOTE };
+const quoteList = { "'": QUOTE, "`": QUASI_QUOTE, ",": UNQUOTE };
 
 // (define x 10)
 const Parser = program => {
@@ -54,6 +56,7 @@ const Parser = program => {
 
 const atom = token => {
   if (token[0] === '"') return token;
+  if (token === "#t" || token === "#f") return token[1] === "t" ? true : false;
   if (!Number.isNaN(+token)) return +token;
   return token;
 };
@@ -143,9 +146,6 @@ const createGlobals = env => {
   env["SQRT1_2"] = Math.SQRT1_2;
   env["SQRT2"] = Math.SQRT2;
 
-  env["#t"] = true;
-  env["#f"] = false;
-
   return env;
 };
 
@@ -160,8 +160,9 @@ let globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null 
 const eval = (ast, env) => {
   env = env || globalEnv;
   if (ast[0] === '"') return ast; // if ast is a string, return it
-  if (ast[0] === "#" && ast[1] === "\\") return ast; // if ast is a char, return it
-  if (typeof ast === "string") {
+  else if (ast[0] === "#" && ast[1] === "\\") return ast; // if ast is a char, return it
+  else if (typeof ast === 'boolean') return ast;
+  else if (typeof ast === "string") {
     // if the entire AST node is a string, it is a variable
     return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
   }
@@ -172,6 +173,9 @@ const eval = (ast, env) => {
   else if (ast[0] === "quote") {
     // if the first alement is 'quote', return the second one
     return ast[1];
+  }
+  else if (ast[0] === "quasiquote") {
+    return evalQuasiQuote(ast, env);
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
@@ -222,6 +226,33 @@ const createLambda = (vars, body, env) => {
   };
 };
 
+const evalQuasiQuote = (ast, env, lvl = 0) => {
+  // `x => 'x; ,x => x; `(,@x y) => (append x y)
+  if (ast.length === 0) return [];
+  if (!Array.isArray(ast)) return ast;
+  if (ast[0] === QUASI_QUOTE && lvl === 0) return evalQuasiQuote(ast[1], env, ++lvl);
+  else if (ast[0] === QUASI_QUOTE) return [ ast[0], ...Array.from(evalQuasiQuote(ast.slice(1), env, ++lvl)) ];
+  if (ast[0] === UNQUOTE && lvl === 1) return eval(ast[1], env);
+  else if (ast[0] === UNQUOTE) return [ ast[0], ...Array.from(evalQuasiQuote(ast.slice(1), env, --lvl)) ];
+  if (Array.isArray(ast))
+    return [ evalQuasiQuote(ast[0], env, lvl), ...Array.from(evalQuasiQuote(ast.slice(1), env, lvl)) ];
+};
+
+const toSchemeDisplayString = ast => {
+  if (typeof ast === "string") return ast;
+  else if (typeof ast === "number") return `${ast}`;
+  else if (typeof ast === "function") return `#<procedure>`;
+  else if (typeof ast === "boolean") return ast ? "#t" : "#f";
+  else if (Array.isArray(ast)) {
+    if (Array.from(Object.values(quoteList)).includes(ast[0]))
+      return `${Array.from(Object.entries(quoteList)).filter(pair => pair[1] === ast[0])[0][0]}${ast
+        .slice(1)
+        .map(list => toSchemeDisplayString(list))
+        .join(" ")}`;
+    return `(${ast.map(list => toSchemeDisplayString(list)).join(" ")})`;
+  }
+};
+
 const repl = () => {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -239,10 +270,12 @@ const repl = () => {
     }
 
     let ast = Parser(input);
+    console.log(ast);
 
     let res = ast.map(node => eval(node)).pop();
 
     res !== undefined ? console.log(res) : null;
+    console.log(toSchemeDisplayString(res));
 
     rl.prompt();
   });
@@ -254,10 +287,9 @@ const repl = () => {
   // });
 };
 
-// repl();
+repl();
 
-let ast = Parser(`(define x 10) display (x)
-  (< x 5)`);
+// let ast = Parser("`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
 
 // let ast = Parser(`
 //   (define x 10)
@@ -316,9 +348,9 @@ let ast = Parser(`(define x 10) display (x)
 // let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
 
-console.log(JSON.stringify(ast));
-let res = ast.map(node => eval(node)).pop();
-res !== undefined ? console.log(res) : null;
+// console.log(JSON.stringify(ast));
+// let res = ast.map(node => eval(node)).pop();
+// res !== undefined ? console.log(toSchemeDisplayString(res)) : null;
 
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))
