@@ -16,12 +16,14 @@ const Parser = program => {
   let line = 0;
 
   const parse = token => {
-    if (token === "(") {
-      let next_tokens = [],
-        token;
+    if (token === "(" || token === '[') {
+      let next_tokens = [], blockType = token === '(' ? 'P' : 'B';
       while (true) {
         token = get_next_token();
-        if (token === ")") return next_tokens;
+        if (token === ")" && blockType === 'P') return next_tokens;
+        else if (token === ')') error('Syntax error: missing `]` to close preceding `[`, found `)` instead.');
+        else if (token === ']' && blockType === 'B') return next_tokens;
+        else if (token === ']') error('Syntax error: missing `)` to close preceding `(`, found `]` instead.');
         else next_tokens.push(parse(token));
       }
     }
@@ -32,7 +34,7 @@ const Parser = program => {
   };
 
   const get_next_token = () => {
-    const tokenizerRegEx = /\s*(,@|[('`,)]|"(?:[\\].|[^\\"])*"|;.*|[^\s('"`,;)]*)(.*)/;
+    const tokenizerRegEx = /\s*(,@|[(\['`,\])]|"(?:[\\].|[^\\"])*"|;.*|[^\s(\['"`,;\])]*)(.*)/;
     let token;
 
     while (true) {
