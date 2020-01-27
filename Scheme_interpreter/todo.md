@@ -5,19 +5,24 @@
 - [x] better block (paren) handling and missing detection
 - [ ] ? maybe give eval() the arg of from what keyword it is comming? like if we are evaling something after 'define', eval will know it
 - [ ] create an error function
+  - [x] first version
 - [x] evaluate a program composed of multiple S-expressions without the need for a begin
   - [x] separated by \n
   - [x] separated by " "
 - [x] repl
-- [ ] support bracket [] syntax in let and cond for ex
+- [x] new parser
+  - [x] support bracket [] syntax in let and cond for ex
+  - [x] dont break the string based on spaces, use a regex to get the front most token, eval it and work on the rest
+- [ ] toSchemeDisplayString
+  - [x] display quasiquote symbols instead of the word
+  - [ ] display a quote if ast is a quoted obj (everything that is not a number, string, char, vector?, procedure)
 
 ### Data
 
 - [x] lists
 - [x] strings
   - [x] don't remove whitespace from strings
-  - [ ] include escaped quotes and support multiline strings and escaped backslashes
-  - [ ] allow for #\space to mean " "
+  - [x] include escaped quotes and support multiline strings and escaped backslashes
   - [ ] make-string k [char] : (make-string 10 #\x) => "xxxxxxxxxx"
   - [ ] string char...
   - [ ] list->string; string->list
@@ -28,6 +33,8 @@
   - [ ] string-set! string k char : (string-set! "Dog" 0 #\L) => "Log"
   - [ ] string=?; string-ci=?; string<?; string>?; string<=?; string>=?; string-ci<?; stirng-ci>?; string-ci<=?; string-ci>=?;
 - [x] characters
+  - [ ] allow for #\space to mean " "
+
 - [ ] vectors ?
 - [x] #t and #f
 
@@ -52,6 +59,9 @@
     2
     ``` 
 - [x] quoted object evaluates to itself
+- [ ] quasiquote syntax
+  - [x] nested quasiqoute and unqoute with nesting levels
+  - [ ] unqoute-splicing
 
 #### Syntax structures
 
