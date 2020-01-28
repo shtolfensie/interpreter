@@ -13,9 +13,9 @@
 - [x] new parser
   - [x] support bracket [] syntax in let and cond for ex
   - [x] dont break the string based on spaces, use a regex to get the front most token, eval it and work on the rest
-- [ ] toSchemeDisplayString
+- [x] toSchemeDisplayString
   - [x] display quasiquote symbols instead of the word
-  - [ ] display a quote if ast is a quoted obj (everything that is not a number, string, char, vector?, procedure)
+  - [x] display a quote if ast is a quoted obj (everything that is not a number, string, char, vector?, procedure)
 
 ### Data
 

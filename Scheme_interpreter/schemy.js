@@ -10,7 +10,6 @@ const error = (msg = "Syntax error") => {
 
 const quoteList = { "'": QUOTE, "`": QUASI_QUOTE, ",": UNQUOTE };
 
-// (define x 10)
 const Parser = program => {
   let lines = program.split("\n");
   let line = 0;
@@ -240,8 +239,8 @@ const evalQuasiQuote = (ast, env, lvl = 0) => {
     return [ evalQuasiQuote(ast[0], env, lvl), ...Array.from(evalQuasiQuote(ast.slice(1), env, lvl)) ];
 };
 
-const toSchemeDisplayString = ast => {
-  if (typeof ast === "string") return ast;
+const toSchemeDisplayString = (ast, lvl = false) => {
+  if (typeof ast === "string") return (ast[0] === '"' && ast[ast.length-1] === '"') ? ast : lvl ? `'${ast}` : ast;
   else if (typeof ast === "number") return `${ast}`;
   else if (typeof ast === "function") return `#<procedure>`;
   else if (typeof ast === "boolean") return ast ? "#t" : "#f";
@@ -251,7 +250,7 @@ const toSchemeDisplayString = ast => {
         .slice(1)
         .map(list => toSchemeDisplayString(list))
         .join(" ")}`;
-    return `(${ast.map(list => toSchemeDisplayString(list)).join(" ")})`;
+    return `${lvl ? "'" : ''}(${ast.map(list => toSchemeDisplayString(list)).join(" ")})`;
   }
 };
 
@@ -277,7 +276,7 @@ const repl = () => {
     let res = ast.map(node => eval(node)).pop();
 
     res !== undefined ? console.log(res) : null;
-    console.log(toSchemeDisplayString(res));
+    console.log(toSchemeDisplayString(res, true));
 
     rl.prompt();
   });
@@ -352,7 +351,7 @@ repl();
 
 // console.log(JSON.stringify(ast));
 // let res = ast.map(node => eval(node)).pop();
-// res !== undefined ? console.log(toSchemeDisplayString(res)) : null;
+// res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
 
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))
