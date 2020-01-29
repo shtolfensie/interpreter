@@ -67,6 +67,6 @@
 
 - [ ] do block?
 - [x] set!
-- [ ] let
-- [ ] let\*
+- [x] let
+- [x] let\*
   - defined variables are accessible to other variables we are defining

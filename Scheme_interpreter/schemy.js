@@ -168,7 +168,7 @@ const eval = (ast, env) => {
     return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
   }
   else if (typeof ast === "number") {
-    // it the entire AST node is a constant number, return it
+    // if the entire AST node is a constant number, return it
     return ast;
   }
   else if (ast[0] === "quote") {
@@ -203,6 +203,17 @@ const eval = (ast, env) => {
       res = eval(ast[i], env);
     }
     return res;
+  }
+  else if (ast[0] === 'let') {
+    let envDefObj = {varNames: [], args: [], outer: env};
+    ast[1].forEach(varInit => {envDefObj.varNames.push(varInit[0]); envDefObj.args.push(eval(varInit[1], env))})
+    let newEnv = environment(envDefObj);
+    return eval(['begin', ...ast.slice(2)], newEnv);
+  }
+  else if (ast[0] === 'let*') {
+    let newEnv = environment({varNames: [], args: [], outer: env});
+    ast[1].forEach(varInit => newEnv[varInit[0]] = eval(varInit[1], newEnv));
+    return eval(['begin', ...ast.slice(2)], newEnv);
   }
   else {
     // everything else is a function call
@@ -291,6 +302,7 @@ const repl = () => {
 repl();
 
 // let ast = Parser("`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
+// let ast = Parser("(let ([x 5]) (let ([x 2] [y x]) (list y x)))");
 
 // let ast = Parser(`
 //   (define x 10)
