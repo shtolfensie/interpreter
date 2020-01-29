@@ -6,6 +6,9 @@
 - [ ] ? maybe give eval() the arg of from what keyword it is comming? like if we are evaling something after 'define', eval will know it
 - [ ] create an error function
   - [x] first version
+  - [ ] create syntax check functions for all expressions that need it (not string, num, ...)
+    - [ ] call each check func after matching a keyword in eval
+    - [ ] create require function: gets a requirement, error msg, if req not met, throw error msg
 - [x] evaluate a program composed of multiple S-expressions without the need for a begin
   - [x] separated by \n
   - [x] separated by " "
@@ -35,15 +38,15 @@
 - [x] characters
   - [ ] allow for #\space to mean " "
 
-- [ ] vectors ?
 - [x] #t and #f
 
 ### Expressions
 
 - [x] if statements
 - [x] change basic math and logic operators to accept more than two args
-- [ ] cond - ? maybe. don't know yet
+- [ ] cond
 - [ ] lambda
+  - [ ] can have multiple body expressions (lambda (x) body body ...) - evaluated like (begin body ...)
   - [x] named
   - [x] anonymous
     - nvm, it works without any more work. because we return a function and then apply some args to it. so it is the same as (+ 2 2), only the '+' (the function) is first evaluated and constructedmarked
@@ -65,8 +68,9 @@
 
 #### Syntax structures
 
-- [ ] do block?
 - [x] set!
 - [x] let
 - [x] let\*
   - defined variables are accessible to other variables we are defining
+- [ ] letrec
+  - [ ] all avriables are defined at the 'same time', allowing for mutually recursive definitions
