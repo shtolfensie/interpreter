@@ -52,7 +52,7 @@
     - nvm, it works without any more work. because we return a function and then apply some args to it. so it is the same as (+ 2 2), only the '+' (the function) is first evaluated and constructedmarked
   - [x] define named functions without lambda
     - (define (test x y z) (+ (x (- y z))))
-  - [ ] add 'rest-args' possibility to functiono definition
+  - [x] add 'rest-args' possibility to functiono definition
     - `(define id (lambda (arg ... . rest-id) body ...+))`
     ```scheme
       (define (avg . l)
@@ -73,4 +73,4 @@
 - [x] let\*
   - defined variables are accessible to other variables we are defining
 - [ ] letrec
-  - [ ] all avriables are defined at the 'same time', allowing for mutually recursive definitions
+  - all avriables are defined at the 'same time', allowing for mutually recursive definitions

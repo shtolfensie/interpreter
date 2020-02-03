@@ -129,7 +129,7 @@ const createGlobals = env => {
   env["length"] = list => list.length;
   // // env["cadr"] = list => list.slice(1, 2);
 
-  env["display"] = a => console.log(a);
+  env["display"] = a => console.log(toSchemeDisplayString(a), a);
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
     args = [ ...args, ...list ];
@@ -231,9 +231,14 @@ const eval = (ast, env) => {
 const createLambda = (vars, body, env) => {
   // works only with 'function' doesn't work with () =>
   return function() {
+    let args = Array.from(arguments), varNames = vars;
+    if (vars[vars.length - 2] === '.') {
+      args = [...args.slice(0, vars.length - 2), args.slice(vars.length - 2)];
+      varNames = [...vars.slice(0, vars.length - 2), vars[vars.length - 1]]
+    }
     return eval(
       body,
-      environment({ varNames: vars, args: arguments, outer: env }) // arguments is a variable that contains arguments passed to the function
+      environment({ varNames, args, outer: env }) // arguments is a variable that contains arguments passed to the function
     ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
   };
 };
