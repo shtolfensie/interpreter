@@ -45,8 +45,8 @@
 - [x] if statements
 - [x] change basic math and logic operators to accept more than two args
 - [ ] cond
-- [ ] lambda
-  - [ ] can have multiple body expressions (lambda (x) body body ...) - evaluated like (begin body ...)
+- [x] lambda
+  - [x] can have multiple body expressions (lambda (x) body body ...) - evaluated like (begin body ...)
   - [x] named
   - [x] anonymous
     - nvm, it works without any more work. because we return a function and then apply some args to it. so it is the same as (+ 2 2), only the '+' (the function) is first evaluated and constructedmarked

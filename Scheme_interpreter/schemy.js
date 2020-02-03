@@ -129,7 +129,7 @@ const createGlobals = env => {
   env["length"] = list => list.length;
   // // env["cadr"] = list => list.slice(1, 2);
 
-  env["display"] = a => console.log(toSchemeDisplayString(a), a);
+  env["display"] = a => console.log(toSchemeDisplayString(a));
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
     args = [ ...args, ...list ];
@@ -180,7 +180,7 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
-    if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1].slice(1), ast[2], env);
+    if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1].slice(1), ast.slice(2), env);
     else env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
   else if (ast[0] === "set!") {
@@ -189,9 +189,9 @@ const eval = (ast, env) => {
   else if (ast[0] === "lambda") {
     // function declaration
     let vars = ast[1]; // expected parameters, eg. function(*A*) {}
-    let body = ast[2]; // executable body of the function
+    let bodyArray = ast.slice(2); // executable bodies of the function
 
-    return createLambda(vars, body, env);
+    return createLambda(vars, bodyArray, env);
   }
   else if (ast[0] === "if") {
     return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
@@ -228,18 +228,17 @@ const eval = (ast, env) => {
   }
 };
 
-const createLambda = (vars, body, env) => {
+const createLambda = (vars, bodyArray, env) => {
   // works only with 'function' doesn't work with () =>
   return function() {
-    let args = Array.from(arguments), varNames = vars;
+    let args = Array.from(arguments), varNames = vars, res; // arguments is a variable that contains arguments passed to the function 
     if (vars[vars.length - 2] === '.') {
       args = [...args.slice(0, vars.length - 2), args.slice(vars.length - 2)];
       varNames = [...vars.slice(0, vars.length - 2), vars[vars.length - 1]]
     }
-    return eval(
-      body,
-      environment({ varNames, args, outer: env }) // arguments is a variable that contains arguments passed to the function
-    ); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
+    let newEnv = environment({ varNames, args, outer: env });
+    bodyArray.forEach(body => res = eval( body, newEnv )); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
+    return res;
   };
 };
 
@@ -287,12 +286,11 @@ const repl = () => {
     }
 
     let ast = Parser(input);
-    console.log(ast);
+    // console.log(ast);
 
     let res = ast.map(node => eval(node)).pop();
 
-    res !== undefined ? console.log(res) : null;
-    console.log(toSchemeDisplayString(res, true));
+    res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
 
     rl.prompt();
   });
