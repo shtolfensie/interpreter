@@ -126,6 +126,7 @@ const createGlobals = env => {
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
   env["list"] = (...list) => list;
   env["cons"] = (n, list) => [ n, ...list ];
+  env["append"] = (...lists) => lists.reduce((res, l) => [...res, ...l]);
   env["length"] = list => list.length;
   env["null?"] = list => Array.isArray(list) && list.length === 0;
   // // env["cadr"] = list => list.slice(1, 2);
@@ -164,7 +165,7 @@ const eval = (ast, env) => {
   if (ast[0] === '"') return ast; // if ast is a string, return it
   else if (ast[0] === "#" && ast[1] === "\\") return ast; // if ast is a char, return it
   else if (typeof ast === 'boolean') return ast;
-  else if (typeof ast === "string") {
+  else if (typeof ast === "string") { // !!!! need to handle undefined variables
     // if the entire AST node is a string, it is a variable
     return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
   }
@@ -181,7 +182,8 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
-    if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1].slice(1), ast.slice(2), env);
+    if (ast.length === 2) env[ast[1]] = undefined;
+    else if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1].slice(1), ast.slice(2), env);
     else env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
   else if (ast[0] === "set!") {
@@ -261,7 +263,10 @@ const evalQuasiQuote = (ast, env, lvl = 0) => {
 };
 
 const toSchemeDisplayString = (ast, lvl = false) => {
-  if (typeof ast === "string") return (ast[0] === '"' && ast[ast.length-1] === '"') ? ast : lvl ? `'${ast}` : ast;
+  if (typeof ast === "string") return ((ast[0] === '"' && ast[ast.length-1] === '"')
+                                      || (ast[0] === '#' && ast[1] === '\\' && ast.length === 3)) ? ast
+                                        : lvl ? `'${ast}`
+                                          : ast;
   else if (typeof ast === "number") return `${ast}`;
   else if (typeof ast === "function") return `#<procedure>`;
   else if (typeof ast === "boolean") return ast ? "#t" : "#f";
