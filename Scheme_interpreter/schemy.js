@@ -119,8 +119,8 @@ const createGlobals = env => {
   env["equal?"] = (a, b) => a === b;
 
   env["not"] = a => !a;
-  env["and"] = (a, ...rest) => rest.reduce((res, b) => res && b, a);
-  env["or"] = (a, ...rest) => rest.reduce((res, b) => res || b, a);
+  env["and"] = (a, ...rest) => !!rest.reduce((res, b) => res && b, a);
+  env["or"] = (a, ...rest) => !!rest.reduce((res, b) => res || b, a);
   env["car"] = list => list[0];
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
