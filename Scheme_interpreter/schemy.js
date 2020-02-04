@@ -127,6 +127,7 @@ const createGlobals = env => {
   env["list"] = (...list) => list;
   env["cons"] = (n, list) => [ n, ...list ];
   env["length"] = list => list.length;
+  env["null?"] = list => Array.isArray(list) && list.length === 0;
   // // env["cadr"] = list => list.slice(1, 2);
 
   env["display"] = a => console.log(toSchemeDisplayString(a));
@@ -205,10 +206,15 @@ const eval = (ast, env) => {
     return res;
   }
   else if (ast[0] === 'let') {
-    let envDefObj = {varNames: [], args: [], outer: env};
-    ast[1].forEach(varInit => {envDefObj.varNames.push(varInit[0]); envDefObj.args.push(eval(varInit[1], env))})
-    let newEnv = environment(envDefObj);
-    return eval(['begin', ...ast.slice(2)], newEnv);
+    let varNames = [], args = [], name;
+    if (!Array.isArray(ast[1])) {
+      name = ast[1];
+      ast = [ast[0], ...ast.slice(2)];
+    }
+    ast[1].forEach(varInit => {varNames.push(varInit[0]); args.push(eval(varInit[1], env))})
+    let lambda = createLambda(varNames, ast.slice(2), env);
+    name ? env[name] = lambda : null;
+    return lambda.apply(env, args);
   }
   else if (ast[0] === 'let*') {
     let newEnv = environment({varNames: [], args: [], outer: env});

@@ -70,6 +70,7 @@
 
 - [x] set!
 - [x] let
+  - [x] named let
 - [x] let\*
   - defined variables are accessible to other variables we are defining
 - [ ] letrec
