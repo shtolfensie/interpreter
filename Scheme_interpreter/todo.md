@@ -44,7 +44,7 @@
 
 - [x] if statements
 - [x] change basic math and logic operators to accept more than two args
-- [ ] cond
+- [x] cond
 - [x] lambda
   - [x] can have multiple body expressions (lambda (x) body body ...) - evaluated like (begin body ...)
   - [x] named
