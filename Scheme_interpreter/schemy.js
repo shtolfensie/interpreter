@@ -199,6 +199,17 @@ const eval = (ast, env) => {
   else if (ast[0] === "if") {
     return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
   }
+  else if (ast[0] === "cond") {
+    let clauseArray = ast.slice(1);
+    for (let i = 0; i < clauseArray.length; i++) {
+      if (clauseArray[i][0] === 'else') return eval(['begin', ...clauseArray[i].slice(1)], env);
+      let predicateRes = eval(clauseArray[i][0], env);
+      if (predicateRes === true) {
+        if (clauseArray[i].length === 1) return predicateRes;
+        return eval(['begin', ...clauseArray[i].slice(1)], env);
+      }
+    }
+  }
   else if (ast[0] === "begin") {
     // evaluate all self contained top level blocks, pass down the env -> able to store variables
     let res;
@@ -315,6 +326,7 @@ const repl = () => {
 
 repl();
 
+// let ast = Parser("(cond ([< 3 2] 4) ([= 0 0] (begin (define x 10) (display x))))")
 // let ast = Parser("`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
 // let ast = Parser("(let ([x 5]) (let ([x 2] [y x]) (list y x)))");
 
