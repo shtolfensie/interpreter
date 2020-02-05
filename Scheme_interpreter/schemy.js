@@ -283,7 +283,7 @@ const toSchemeDisplayString = (ast, lvl = false) => {
   else if (typeof ast === "boolean") return ast ? "#t" : "#f";
   else if (Array.isArray(ast)) {
     if (Array.from(Object.values(quoteList)).includes(ast[0]))
-      return `${Array.from(Object.entries(quoteList)).filter(pair => pair[1] === ast[0])[0][0]}${ast
+      return `${lvl ? "'" : ""}${Array.from(Object.entries(quoteList)).filter(pair => pair[1] === ast[0])[0][0]}${ast
         .slice(1)
         .map(list => toSchemeDisplayString(list))
         .join(" ")}`;
@@ -327,7 +327,8 @@ const repl = () => {
 repl();
 
 // let ast = Parser("(cond ([< 3 2] 4) ([= 0 0] (begin (define x 10) (display x))))")
-// let ast = Parser("`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
+// let ast = Parser("''`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
+// let ast = Parser("'`a");
 // let ast = Parser("(let ([x 5]) (let ([x 2] [y x]) (list y x)))");
 
 // let ast = Parser(`
