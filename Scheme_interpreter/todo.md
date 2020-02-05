@@ -62,7 +62,7 @@
     2
     ``` 
 - [x] quoted object evaluates to itself
-  - [ ] fix ''a to return ''a and '(quote a) to return ''a
+  - [x] fix ''a to return ''a and '(quote a) to return ''a
 - [ ] quasiquote syntax
   - [x] nested quasiqoute and unqoute with nesting levels
   - [ ] unqoute-splicing
