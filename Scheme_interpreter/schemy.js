@@ -40,7 +40,8 @@ const Parser = program => {
       if (lines[line] === "") line++;
       if (!lines[line] || line > lines.length - 1) return "EOF";
       [ , token, lines[line] ] = tokenizerRegEx.exec(lines[line]);
-      if (token !== "" && token[0] !== ";") return token;
+      if (token === "") error(`Syntax error: ${lines[line]}`);
+      if (token[0] !== ";") return token; // used to be token !== "" && token[0] !== ";"
     }
   };
 
@@ -66,7 +67,7 @@ const environment = ({ varNames, args, outer }) => {
   // create an environment object
 
   let env = {};
-  outer = outer || {}; // if an outer env is not supplied, set it to an empty object
+  outer = outer || {find: v => ({[v] : null})}; // if an outer env is not supplied, set it to an empty env
 
   const find = variable => {
     if (env.hasOwnProperty(variable)) {
@@ -75,6 +76,7 @@ const environment = ({ varNames, args, outer }) => {
     }
     else {
       // otherwise, try looking for it in the outer env
+      // return Object.entries(outer).length !== 0 ? outer.find(variable) : null;
       return outer.find(variable);
     }
   };
@@ -129,7 +131,9 @@ const createGlobals = env => {
   env["append"] = (...lists) => lists.reduce((res, l) => [...res, ...l]);
   env["length"] = list => list.length;
   env["null?"] = list => Array.isArray(list) && list.length === 0;
+  env["list?"] = list => Array.isArray(list);
   // // env["cadr"] = list => list.slice(1, 2);
+  env["integer?"] = a => Number.isInteger(a);
 
   env["display"] = a => console.log(toSchemeDisplayString(a));
   env["apply"] = (callable, ...args) => {
@@ -163,11 +167,13 @@ let globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null 
 const eval = (ast, env) => {
   env = env || globalEnv;
   if (ast[0] === '"') return ast; // if ast is a string, return it
-  else if (ast[0] === "#" && ast[1] === "\\") return ast; // if ast is a char, return it
+  else if (ast[0] === "#" && ast[1] === "\\") return ast.length === 3 ? ast : error(`Bad character constant: ${ast}`); // if ast is a char, return it
   else if (typeof ast === 'boolean') return ast;
   else if (typeof ast === "string") { // !!!! need to handle undefined variables
     // if the entire AST node is a string, it is a variable
-    return env.find(ast)[ast]; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
+    let variable = env.find(ast)[ast];
+    checkVariable(variable, ast);
+    return variable; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
   }
   else if (typeof ast === "number") {
     // if the entire AST node is a constant number, return it
@@ -291,6 +297,13 @@ const toSchemeDisplayString = (ast, lvl = false) => {
   }
 };
 
+const checkVariable = (variable, ast) => {
+  if (variable === undefined) return error("Unassigned variable");
+  else if (variable === null) return error(`Unbound symbol: ${ast}`);
+}
+
+
+
 const repl = () => {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -324,13 +337,13 @@ const repl = () => {
   // });
 };
 
-repl();
+// repl();
 
 // let ast = Parser("(cond ([< 3 2] 4) ([= 0 0] (begin (define x 10) (display x))))")
 // let ast = Parser("''`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
 // let ast = Parser("'`a");
 // let ast = Parser("(let ([x 5]) (let ([x 2] [y x]) (list y x)))");
-
+let ast = Parser(`(define str "hahah)`);
 // let ast = Parser(`
 //   (define x 10)
 //   x
@@ -388,9 +401,9 @@ repl();
 // let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
 
-// console.log(JSON.stringify(ast));
-// let res = ast.map(node => eval(node)).pop();
-// res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
+console.log(JSON.stringify(ast));
+let res = ast.map(node => eval(node)).pop();
+res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
 
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))
