@@ -169,7 +169,7 @@ const eval = (ast, env) => {
   if (ast[0] === '"') return ast; // if ast is a string, return it
   else if (ast[0] === "#" && ast[1] === "\\") return ast.length === 3 ? ast : error(`Bad character constant: ${ast}`); // if ast is a char, return it
   else if (typeof ast === 'boolean') return ast;
-  else if (typeof ast === "string") { // !!!! need to handle undefined variables
+  else if (typeof ast === "string") {
     // if the entire AST node is a string, it is a variable
     let variable = env.find(ast)[ast];
     checkVariable(variable, {varName: ast});
@@ -207,12 +207,14 @@ const eval = (ast, env) => {
     return createLambda(vars, bodyArray, env);
   }
   else if (ast[0] === "if") {
+    checkIf(ast);
     return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
   }
   else if (ast[0] === "cond") {
+    checkCond(ast);
     let clauseArray = ast.slice(1);
     for (let i = 0; i < clauseArray.length; i++) {
-      if (clauseArray[i][0] === 'else') return eval(['begin', ...clauseArray[i].slice(1)], env);
+      if (clauseArray[i][0] === 'else') return checkCondElseClause(clauseArray[i], ast) ? eval(['begin', ...clauseArray[i].slice(1)], env) : null;
       let predicateRes = eval(clauseArray[i][0], env);
       if (predicateRes === true) {
         if (clauseArray[i].length === 1) return predicateRes;
@@ -265,6 +267,7 @@ const createLambda = (vars, bodyArray, env) => {
       args = [...args.slice(0, vars.length - 2), args.slice(vars.length - 2)];
       varNames = [...vars.slice(0, vars.length - 2), vars[vars.length - 1]]
     }
+    else if (vars.length !== args.length) error(`#<procedure>: arity mismatch: the expected number of arguments does not match the given number; expected: ${vars.length}; given: ${args.length}`);
     let newEnv = environment({ varNames, args, outer: env });
     bodyArray.forEach(body => res = eval( body, newEnv )); // returns a func that evaluates the body in a new env with the declared func params and their values (args)
     return res;
@@ -301,7 +304,7 @@ const toSchemeDisplayString = (ast, lvl = false) => {
   }
 };
 
-// const isSymbol = s => 
+const isSymbol = s => typeof s === "string" &&  !(/^#\\|^".*("$)|^#/.test(s));
 const checkVariable = (variable, {varName, ast}, fromSet) => {
   if (variable === undefined && !fromSet) return error(`Unassigned variable: ${varName}`);
   else if (variable === null) return error(`Unbound symbol: ${varName}${ast ? `, at ${toSchemeDisplayString(ast)}` : ""}`);
@@ -316,9 +319,13 @@ const checkLambda = (vars, bodyArray, ast) =>  {
     else if (bodyArray.length === 0) msg = "no expressions"
   }
   else if (!Array.isArray(vars)) msg = "missing () around formals definition";
-  // else vars.forEach(v => )
-  console.log(msg)
+  else vars.forEach(v => !isSymbol(v) ? msg = `not an identifier, at: ${v}` : null);
+  msg ? erro(`Syntax error: lambda: ${msg}`) : null;
 }
+const checkIf = ast => ast.length !== 4 ? error(`Syntax error: if: invalid number of argumnets`) : null;
+const checkCond = ast => !(ast.length > 1) ? error("Syntax error: cond: no clauses provided")
+                          : ast.slice(1).forEach(c => !Array.isArray(c) ? error(`Syntax error: cond: clause is not a test-value pair, at: ${toSchemeDisplayString(c)}`):null);
+const checkCondElseClause = (clause, cond) => clause.length < 2 ? error(`Syntax error: cond: missing expressions in 'else' clause, at: ${toSchemeDisplayString(cond)}`):true;
 
 const repl = () => {
   const rl = readline.createInterface({
