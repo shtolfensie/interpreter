@@ -121,8 +121,8 @@ const createGlobals = env => {
   env["equal?"] = (a, b) => a === b;
 
   env["not"] = a => !a;
-  env["and"] = (a, ...rest) => !!rest.reduce((res, b) => res && b, a);
-  env["or"] = (a, ...rest) => !!rest.reduce((res, b) => res || b, a);
+  env["and"] = (a, ...rest) => rest.reduce((res, b) => res && b, a);
+  env["or"] = (a, ...rest) => rest.reduce((res, b) => res || b, a);
   env["car"] = list => list[0];
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
@@ -208,7 +208,7 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "if") {
     checkIf(ast);
-    return eval(ast[1], env) === true ? eval(ast[2], env) : eval(ast[3], env);
+    return eval(ast[1], env) !== false ? eval(ast[2], env) : eval(ast[3], env);
   }
   else if (ast[0] === "cond") {
     checkCond(ast);
@@ -216,7 +216,7 @@ const eval = (ast, env) => {
     for (let i = 0; i < clauseArray.length; i++) {
       if (clauseArray[i][0] === 'else') return checkCondElseClause(clauseArray[i], ast) ? eval(['begin', ...clauseArray[i].slice(1)], env) : null;
       let predicateRes = eval(clauseArray[i][0], env);
-      if (predicateRes === true) {
+      if (predicateRes !== false) {
         if (clauseArray[i].length === 1) return predicateRes;
         return eval(['begin', ...clauseArray[i].slice(1)], env);
       }
