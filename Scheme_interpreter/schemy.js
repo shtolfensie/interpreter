@@ -172,7 +172,7 @@ const eval = (ast, env) => {
   else if (typeof ast === "string") { // !!!! need to handle undefined variables
     // if the entire AST node is a string, it is a variable
     let variable = env.find(ast)[ast];
-    checkVariable(variable, ast);
+    checkVariable(variable, {varName: ast});
     return variable; // if there is a variable by this name in any env, this env gets returned and then the value of the variable is returned
   }
   else if (typeof ast === "number") {
@@ -181,9 +181,11 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "quote") {
     // if the first alement is 'quote', return the second one
+    checkQuote(ast);
     return ast[1];
   }
   else if (ast[0] === "quasiquote") {
+    checkQuote(ast);
     return evalQuasiQuote(ast, env);
   }
   else if (ast[0] === "define") {
@@ -193,13 +195,15 @@ const eval = (ast, env) => {
     else env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
   }
   else if (ast[0] === "set!") {
+    checkSet(ast);
+    checkVariable(env.find(ast[1])[ast[1]], {varName: ast[1], ast}, true);
     env.find(ast[1])[ast[1]] = eval(ast[2], env); // find the env where the variable is, and modify it
   }
   else if (ast[0] === "lambda") {
     // function declaration
     let vars = ast[1]; // expected parameters, eg. function(*A*) {}
     let bodyArray = ast.slice(2); // executable bodies of the function
-
+    checkLambda(vars, bodyArray, ast);
     return createLambda(vars, bodyArray, env);
   }
   else if (ast[0] === "if") {
@@ -297,12 +301,24 @@ const toSchemeDisplayString = (ast, lvl = false) => {
   }
 };
 
-const checkVariable = (variable, ast) => {
-  if (variable === undefined) return error("Unassigned variable");
-  else if (variable === null) return error(`Unbound symbol: ${ast}`);
+// const isSymbol = s => 
+const checkVariable = (variable, {varName, ast}, fromSet) => {
+  if (variable === undefined && !fromSet) return error(`Unassigned variable: ${varName}`);
+  else if (variable === null) return error(`Unbound symbol: ${varName}${ast ? `, at ${toSchemeDisplayString(ast)}` : ""}`);
 }
-
-
+const checkQuote = ast => ast.length !== 2 ? error(`Syntax error: quote: ${ast.length === 1 ? "no arguments" : "too many arguments"}`) : null;
+const checkSet = ast => ast.length !== 3 ? error(`Syntax error: set!: ${ast.length === 1 ? "no arguments" : ast.length === 2 ? "not enough arguments" : "too many arguments"} `) :null;
+const checkLambda = (vars, bodyArray, ast) =>  {
+  let msg = "";
+  if (ast.length < 3) {
+    if (ast.length === 1) msg = "no formals or expressions";
+    else if (!Array.isArray(vars)) msg = "no formals definition";
+    else if (bodyArray.length === 0) msg = "no expressions"
+  }
+  else if (!Array.isArray(vars)) msg = "missing () around formals definition";
+  // else vars.forEach(v => )
+  console.log(msg)
+}
 
 const repl = () => {
   const rl = readline.createInterface({
@@ -337,13 +353,13 @@ const repl = () => {
   // });
 };
 
-// repl();
+repl();
 
 // let ast = Parser("(cond ([< 3 2] 4) ([= 0 0] (begin (define x 10) (display x))))")
 // let ast = Parser("''`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
 // let ast = Parser("'`a");
 // let ast = Parser("(let ([x 5]) (let ([x 2] [y x]) (list y x)))");
-let ast = Parser(`(define str "hahah)`);
+let ast = Parser(`(define ' 4)`);
 // let ast = Parser(`
 //   (define x 10)
 //   x
