@@ -26,7 +26,7 @@ const Parser = program => {
         else next_tokens.push(parse(token));
       }
     }
-    else if (token === ")") error("Unexpected end of s-expression");
+    else if (token === ")" || token === "]") error("Unexpected end of s-expression");
     else if (quoteList.hasOwnProperty(token)) return [ quoteList[token], parse(get_next_token()) ];
     else if (token === "EOF") error("Unexpected end of file");
     else return atom(token);
@@ -190,6 +190,7 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === "define") {
     // the first node of the AST is define
+    checkDefine(ast);
     if (ast.length === 2) env[ast[1]] = undefined;
     else if (Array.isArray(ast[1])) env[ast[1][0]] = createLambda(ast[1].slice(1), ast.slice(2), env);
     else env[ast[1]] = eval(ast[2], env); // evaluate the third element of the AST node and save it into the env under the second element
@@ -254,6 +255,7 @@ const eval = (ast, env) => {
       args[i] = eval(ast[i], env);
     }
     let procedure = args.shift(); // the first argument is the procedure itself
+    checkProcedure(procedure, ast);
 
     return procedure.apply(env, args);
   }
@@ -310,6 +312,17 @@ const checkVariable = (variable, {varName, ast}, fromSet) => {
   else if (variable === null) return error(`Unbound symbol: ${varName}${ast ? `, at ${toSchemeDisplayString(ast)}` : ""}`);
 }
 const checkQuote = ast => ast.length !== 2 ? error(`Syntax error: quote: ${ast.length === 1 ? "no arguments" : "too many arguments"}`) : null;
+const checkDefine = ast => {
+  let msg = '';
+  let astString = toSchemeDisplayString(ast);
+  if (ast.length < 2) msg = `not enough arguments, at ${astString}`;
+  else if (!Array.isArray(ast[1]) && !isSymbol(ast[1])) msg =`not an identifier, at: ${ast[1]}, in: ${astString}`;
+  else if (Array.isArray(ast[1])) {
+    if (ast.length < 3) msg = `no lambda expressins, at: ${astString}`
+    ast[1].forEach(v => !isSymbol(v) ? msg += `${msg ? '; ' : ''}not an identifier, at: ${v}, in ${astString}` : null);
+  }
+  msg ? error(`Syntax error: define: ${msg}`) : null;
+}
 const checkSet = ast => ast.length !== 3 ? error(`Syntax error: set!: ${ast.length === 1 ? "no arguments" : ast.length === 2 ? "not enough arguments" : "too many arguments"} `) :null;
 const checkLambda = (vars, bodyArray, ast) =>  {
   let msg = "";
@@ -320,12 +333,13 @@ const checkLambda = (vars, bodyArray, ast) =>  {
   }
   else if (!Array.isArray(vars)) msg = "missing () around formals definition";
   else vars.forEach(v => !isSymbol(v) ? msg = `not an identifier, at: ${v}` : null);
-  msg ? erro(`Syntax error: lambda: ${msg}`) : null;
+  msg ? error(`Syntax error: lambda: ${msg}, in ${toSchemeDisplayString(ast)}`) : null;
 }
 const checkIf = ast => ast.length !== 4 ? error(`Syntax error: if: invalid number of argumnets`) : null;
 const checkCond = ast => !(ast.length > 1) ? error("Syntax error: cond: no clauses provided")
                           : ast.slice(1).forEach(c => !Array.isArray(c) ? error(`Syntax error: cond: clause is not a test-value pair, at: ${toSchemeDisplayString(c)}`):null);
 const checkCondElseClause = (clause, cond) => clause.length < 2 ? error(`Syntax error: cond: missing expressions in 'else' clause, at: ${toSchemeDisplayString(cond)}`):true;
+const checkProcedure = (procedure, ast) => typeof procedure !== 'function' ? error(`Application error: '${ast[0]}' is not a procedure, at: ${toSchemeDisplayString(ast)}`) : null;
 
 const repl = () => {
   const rl = readline.createInterface({
@@ -343,12 +357,18 @@ const repl = () => {
       return;
     }
 
-    let ast = Parser(input);
-    // console.log(ast);
-
-    let res = ast.map(node => eval(node)).pop();
+    let error = '';
+    let ast = undefined;
+    let res = undefined;
+    try {
+      ast = Parser(input);
+      ast.forEach(node => res = eval(node));
+    } catch (err) {
+      error = err;
+    }
 
     res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
+    error ? console.error(`\x1b[31m${error}\x1b[0m`) : null;
 
     rl.prompt();
   });
@@ -366,7 +386,7 @@ repl();
 // let ast = Parser("''`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)");
 // let ast = Parser("'`a");
 // let ast = Parser("(let ([x 5]) (let ([x 2] [y x]) (list y x)))");
-let ast = Parser(`(define ' 4)`);
+// let ast = Parser(`(define quote 4)`);
 // let ast = Parser(`
 //   (define x 10)
 //   x
@@ -424,9 +444,9 @@ let ast = Parser(`(define ' 4)`);
 // let ast = parse(tokenize("(display 4)"));
 // console.log(ast);
 
-console.log(JSON.stringify(ast));
-let res = ast.map(node => eval(node)).pop();
-res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
+// console.log(JSON.stringify(ast));
+// let res = ast.map(node => eval(node)).pop();
+// res !== undefined ? console.log(toSchemeDisplayString(res, true)) : null;
 
 // console.log(
 //   // JSON.stringify(parse(tokenize(" ( begin (  define r 10) (* pi ( * r r )))")))

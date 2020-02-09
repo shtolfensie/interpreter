@@ -8,7 +8,6 @@
   - [x] first version
   - [ ] create syntax check functions for all expressions that need it (not string, num, ...)
     - [ ] call each check func after matching a keyword in eval
-    - [ ] create require function: gets a requirement, error msg, if req not met, throw error msg
 - [x] evaluate a program composed of multiple S-expressions without the need for a begin
   - [x] separated by \n
   - [x] separated by " "
