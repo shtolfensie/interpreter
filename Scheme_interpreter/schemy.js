@@ -244,6 +244,7 @@ const eval = (ast, env) => {
     return lambda.apply(env, args);
   }
   else if (ast[0] === 'let*') {
+    checkLet(ast, true);
     let newEnv = environment({varNames: [], args: [], outer: env});
     ast[1].forEach(varInit => newEnv[varInit[0]] = eval(varInit[1], newEnv));
     return eval(['begin', ...ast.slice(2)], newEnv);
@@ -340,9 +341,9 @@ const checkIf = ast => ast.length !== 4 ? error(`Syntax error: if: invalid numbe
 const checkCond = ast => !(ast.length > 1) ? error("Syntax error: cond: no clauses provided")
                           : ast.slice(1).forEach(c => !Array.isArray(c) ? error(`Syntax error: cond: clause is not a test-value pair, at: ${toSchemeDisplayString(c)}`):null);
 const checkCondElseClause = (clause, cond) => clause.length < 2 ? error(`Syntax error: cond: missing expressions in 'else' clause, at: ${toSchemeDisplayString(cond)}`):true;
-const checkLet = ast => {
+const checkLet = (ast, fromLetStar = false) => {
   let msg = '', astString = toSchemeDisplayString(ast);
-  if (!Array.isArray(ast[1])) {
+  if (!Array.isArray(ast[1]) && !fromLetStar) {
     if (!isSymbol(ast[1])) msg = `named-let: 'name' not an identifier, at: ${ast[1]}, in: ${astString}`;
     ast = [ast[0], ...ast.slice(2)];
   }
