@@ -233,6 +233,7 @@ const eval = (ast, env) => {
   }
   else if (ast[0] === 'let') {
     let varNames = [], args = [], name;
+    checkLet(ast);
     if (!Array.isArray(ast[1])) {
       name = ast[1];
       ast = [ast[0], ...ast.slice(2)];
@@ -339,6 +340,22 @@ const checkIf = ast => ast.length !== 4 ? error(`Syntax error: if: invalid numbe
 const checkCond = ast => !(ast.length > 1) ? error("Syntax error: cond: no clauses provided")
                           : ast.slice(1).forEach(c => !Array.isArray(c) ? error(`Syntax error: cond: clause is not a test-value pair, at: ${toSchemeDisplayString(c)}`):null);
 const checkCondElseClause = (clause, cond) => clause.length < 2 ? error(`Syntax error: cond: missing expressions in 'else' clause, at: ${toSchemeDisplayString(cond)}`):true;
+const checkLet = ast => {
+  let msg = '', astString = toSchemeDisplayString(ast);
+  if (!Array.isArray(ast[1])) {
+    if (!isSymbol(ast[1])) msg = `named-let: 'name' not an identifier, at: ${ast[1]}, in: ${astString}`;
+    ast = [ast[0], ...ast.slice(2)];
+  }
+  if (!Array.isArray(ast[1])) msg += `${msg?"; ":""}let: not a list of bindings at: ${ast[1]}, in: ${astString}`;
+  else ast[1].forEach(pair => {
+    console.log(pair)
+    !Array.isArray(pair) ? msg += `${msg?"; ":""}let: not an identifier expression for a binding at: ${pair}, in: ${astString}` : null;
+    !isSymbol(pair[0]) ? msg += `${msg?"; ":""}let: not an identifier at: ${pair[0]}, in ${astString}` : null;
+    pair.length !== 2 ? msg += `${msg?"; ":""}let: not and identifier expression for a binding at: ${pair}, in: ${astString}` : null;
+  });
+  if (ast.length < 3) msg += `${msg?"; ":""}let: missing body, in: ${astString}`;
+  if (msg) error(`Syntax error: ${msg}`);
+}
 const checkProcedure = (procedure, ast) => typeof procedure !== 'function' ? error(`Application error: '${ast[0]}' is not a procedure, at: ${toSchemeDisplayString(ast)}`) : null;
 
 const repl = () => {
