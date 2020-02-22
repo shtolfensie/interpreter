@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import Toolbar from './ToolBar'
+import Header from './Header'
 import Editor from './Editor'
 import '../css/EditorArea.css'
 
@@ -73,7 +73,7 @@ class EditorArea extends Component {
     const { interpreterSelect, displayCode, displayAST, inputEditorValue, outputEditorValue, astEditorValue, codeEditorValue } = this.state;
     return (
       <div>
-        <Toolbar interpreterSelect={interpreterSelect} displayAST={displayAST} displayCode={displayCode} handleChange={this.handleToolBarChange} />
+        <Header interpreterSelect={interpreterSelect} displayAST={displayAST} displayCode={displayCode} handleChange={this.handleToolBarChange} />
         <button className='btn run-btn' onClick={this.handleClickRun}>RUN!</button>
         <Examples inter={interpreterSelect} />
         <div className='editorContainer'>
