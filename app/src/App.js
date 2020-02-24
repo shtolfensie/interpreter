@@ -16,7 +16,7 @@ const theme = createMuiTheme({
 
 const App = () => {
   const [isInterpreterJSlike, setIsIetinterpreterJSlike] = useState(false)
-  const [isEditorClassic, setIsEditorClassic] = useState(false)
+  const [isEditorClassic, setIsEditorClassic] = useState(true)
 
   const handleInterpreterChange = e => setIsIetinterpreterJSlike(e.target.checked);
   const handleEditorChange = e => setIsEditorClassic(e.target.checked);

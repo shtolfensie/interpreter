@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { css, cx } from 'emotion'
+import { css, cx } from 'emotion';
 
 import EditorJupy from './EditorJupy';
+import EditorClassic from './EditorClassic';
 
 const EditorContainer = ({editor, interpreter}) => {
 
@@ -57,21 +58,5 @@ const EditorContainer = ({editor, interpreter}) => {
 }
 
 
-const EditorClassic = ({fileData}) => {
-  const baseClassic = css`width: 95%;
-  height: 100%;
-  border-radius: 4px;
-  margin: 0 auto;
-  box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
-  `
-  return (
-    <div className={baseClassic}>
-      Good ol' classic
-      <p>
-        {fileData.cells[0].input}
-      </p>
-    </div>
-  )
-}
 
 export default EditorContainer;
