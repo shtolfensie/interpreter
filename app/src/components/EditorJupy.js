@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { css, cx } from 'emotion';
 import CloseIcon from '@material-ui/icons/CloseRounded';
 import CircleIcon from '@material-ui/icons/FiberManualRecord';
 
 import TextareaAutosize from 'react-autosize-textarea';
 
+const TAB = '    ';
 
+//#region base css
 const baseJupy = css`width: 80%;
   height: 900px;
   // border: 1px solid black;
@@ -13,6 +15,8 @@ const baseJupy = css`width: 80%;
   margin: 0 auto;
   box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
 `
+//#endregion
+//#region fileselector css
 const fileSelector = css`width: 100%;
   height: 45px;
   overflow-x: hidden;
@@ -60,16 +64,20 @@ const fileTab = css`min-width: 110px;
     background-color: #F1F1F1;
   }
 `
+//#endregion
 
 const handleClick = e => alert('its fucking late');
 const handleCloseClick = e => alert('close');
 const handleChange = e => console.log(e.target, e)
 
-const EditorJupy = ({fileData, fileNameArray}) => {
+const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
   const [activeCell, setActiveCell] = useState(0);
-  const handleCellClick = (key) => setActiveCell(key);
+  // const handleCellClick = (key) => setActiveCell(key);
+  const handleCellInputChange = newCellData => {
+    handleCellChange(newCellData, activeCell)
+  }
 
-  fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
+  // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
   return (
     <div className={baseJupy}>
@@ -84,7 +92,16 @@ const EditorJupy = ({fileData, fileNameArray}) => {
           fileName={fileName}/>))}
       </div>
       <div className='cell-container'>
-        {fileData.cells.map((cell, i) => <Cell setActive={handleCellClick} isActive={i == activeCell} key={i} cellIndex={i} cellData={cell}/>)}
+        {fileData.cells.map((cell, i) => (
+          <Cell 
+            handleCellInputChange={handleCellInputChange}
+            setActive={setActiveCell}
+            isActive={i === activeCell}
+            key={i}
+            cellIndex={i}
+            cellData={cell}
+          />
+        ))}
       </div>
 
     </div>
@@ -104,7 +121,7 @@ const FileTab = ({fileName, handleClick, handleCloseClick, isNotSaved, isSelecte
     </div>
   </div>
 );
-
+//#region Cell css
 const baseCell = css`
   display: flex;
   flex-direction: column;
@@ -153,7 +170,7 @@ const inputPrompt = css`
 `
 const inputArea = css`
   flex-grow: 1;
-  
+  tab-size: 4;
 `
 const outputPrompt = css`
   color: #D84315;
@@ -165,38 +182,129 @@ const outputArea = css`
   line-height: 1.21429em;
   font-family: monospace;
 `
+//#endregion
 
-const Cell = ({cellIndex, cellData, setInputValue, setActive, isActive}) => {
+const Cell = ({handleCellInputChange, cellIndex, cellData, setInputValue, setActive, isActive}) => {
   const {num, input, output, error, ast} = cellData;
+  const textArea = useRef();
   
-  // const handleKeyDown = (e) => {
-  //   if (e.keyCode === 9) {
-  //     e.preventDefault();
-  //     let start = e.target.selectionStart;
-  //     let end = e.target.selectionEnd;
-  //     console.log(start, end);
-  //     setInputValue(input.slice(0,start) + '\t' + input.slice(end));
-  //     e.target.setSelectionRange(start + 1, start + 1); // !!! this (((might))) work. might need to get a ref to the text area
-  //   }
-  // }
+  const handleChange = e => {
+    handleCellInputChange({
+      num,
+      input: e.target.value,
+      output,
+      error,
+      ast
+    });
+  }
+  const handleKeyDown = (e) => {
+    console.log(e.keyCode);
+    if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
+    // if (e.key === 'x') console.log(getRowNumber(e.target.selectionStart, 0), "<-- row");
+    let start = e.target.selectionStart;
+    let end = e.target.selectionEnd;
+    let value = input;
+    const rowArray = input.split('\n');
+    const currentStartRowIndex = getRowNumber(start, 0);
+    const currentEndRowIndex = getRowNumber(end, 0);
+    if (e.keyCode === 9) { // handle tab
+      e.preventDefault();
+      let isFirstRowModified = false;
+      let isLastRowModified = false;
+      let numOfChanges = 0;
+      if (e.shiftKey) {
+        for (let i = currentStartRowIndex; i < currentEndRowIndex+1; i++) {
+          if (rowArray[i][0] === '\t') {
+            if (i === currentStartRowIndex) isFirstRowModified = true;
+            if (i === currentEndRowIndex) isLastRowModified = true;
+            rowArray[i] = rowArray[i].slice(1);
+            numOfChanges++;
+          }
+        }
+        value = rowArray.join('\n');
+        // if ((currentStartRowIndex !== currentEndRowIndex) && (start === end) && (input[start-1] !== '\n' && start -1 >= 0) && value !== input) end = start = start - 1
+        if ((input[start-1] !== '\n' && start -1 >= 0)) {
+        }
+        console.log('first: ', isFirstRowModified, 'last: ', isLastRowModified);
+        if (isFirstRowModified) start -= 1;
+        end -= numOfChanges;
+      }
+      else if (currentStartRowIndex !== currentEndRowIndex) {
+        for (let i = currentStartRowIndex; i < currentEndRowIndex+1; i++) {
+          rowArray[i] = '\t' + rowArray[i];
+          numOfChanges++;
+        }
+        value = rowArray.join('\n');
+        if (start !== 0) start += 1;
+        end += numOfChanges;
+      }
+      else {
+        value = input.slice(0,start) + '\t' + input.slice(end);
+        end = start = start + 1;
+      }
+    }
+    if (e.keyCode === 38) { // up-arrow
+      if (e.altKey) {
+        if (currentStartRowIndex === 0) return;
+        const toBeMoved = rowArray.splice(currentStartRowIndex, (currentEndRowIndex-currentStartRowIndex)+1);
+        const aboveRowLength = rowArray[currentStartRowIndex-1].length;
+        rowArray.splice(currentStartRowIndex-1, 0, ...toBeMoved);
+        console.log(aboveRowLength);
+        value = rowArray.join('\n');
+        start -= aboveRowLength+1;
+        end -= aboveRowLength+1;
+      }
+    } // 38 40
+    if (e.keyCode === 40) { // up-arrow
+      if (e.altKey) {
+        if (currentEndRowIndex === rowArray.length-1) return;
+        const belowRowLength = rowArray[currentEndRowIndex+1].length;
+        const toBeMoved = rowArray.splice(currentStartRowIndex, (currentEndRowIndex-currentStartRowIndex)+1);
+        rowArray.splice(currentEndRowIndex+1, 0, ...toBeMoved);
+        value = rowArray.join('\n');
+        start += belowRowLength+1; // !!! eh i dont know
+        end += belowRowLength+1;
+      }
+    } // 38 40
+    if (e.keyCode === 13 && e.shiftKey) {
+      e.preventDefault();
+      alert('booo'+cellIndex)
+    }
+
+    if (value !== input) {
+      handleChange({target: { value }});
+      if (textArea.current) {
+        textArea.current.value = value;
+        textArea.current.selectionStart = start
+        textArea.current.selectionEnd = end;
+      }
+    }
+  }
+
+  const getRowNumber = (index, row) => {
+    const previousNewline = input.lastIndexOf('\n', index-1);
+    if (previousNewline < 0) return row;
+    return getRowNumber(previousNewline, row+1);
+  }
   const handleCellClick = () => setActive(cellIndex);
   return (
     <div className={css`${baseCell} ${isActive && activeCell}`} onClick={handleCellClick}>
       <div className={inOutContainer}>
         <div className={promptContainer}>
-          <div className={cx(prompt, inputPrompt)}>In [ ]:</div>
+          <div className={cx(prompt, inputPrompt)}>In [{num}]:</div>
         </div>
         <TextareaAutosize
+          ref={textArea}
           selectionStart={0}
           className={inputArea}
-          style={{lineHeight: '20px', resize: 'none', padding: '5px', width: '300px', tabSize: '4', outline: 'none'}}
+          style={{lineHeight: '20px', resize: 'none', padding: '5px', width: '300px', outline: 'none'}}
           value={input}
           onFocus={handleCellClick}
-          // onChange={e => setCellValue(e.currentTarget.value)}
-          // onKeyDown={handleKeyDown}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
         />
-      </div>
-      <div className={inOutContainer}>
+        </div>
+        <div className={inOutContainer}>
         <div className={promptContainer}>
           <div className={cx(prompt, outputPrompt)}>Out[ ]:</div>
         </div>
