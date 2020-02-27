@@ -72,9 +72,15 @@ const handleChange = e => console.log(e.target, e)
 
 const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
   const [activeCell, setActiveCell] = useState(0);
+  const [isEdit, setIsEdit] = useState(true)
   // const handleCellClick = (key) => setActiveCell(key);
   const handleCellInputChange = newCellData => {
     handleCellChange(newCellData, activeCell)
+  }
+  const handleActiveCellChange = (oldCellIndex, newCellIndex, isEdit) => {
+    if (newCellIndex < 0 || newCellIndex > fileData.cells.length-1) return;
+    setActiveCell(newCellIndex);
+    setIsEdit(isEdit);
   }
 
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
@@ -97,6 +103,8 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
             handleCellInputChange={handleCellInputChange}
             setActive={setActiveCell}
             isActive={i === activeCell}
+            isEdit={isEdit}
+            handleActiveCellChange={handleActiveCellChange}
             key={i}
             cellIndex={i}
             cellData={cell}
@@ -184,7 +192,7 @@ const outputArea = css`
 `
 //#endregion
 
-const Cell = ({handleCellInputChange, cellIndex, cellData, setInputValue, setActive, isActive}) => {
+const Cell = ({handleCellInputChange, cellIndex, cellData, setActive, isActive, isEdit, handleActiveCellChange}) => { // !!! need to decide if one function or mmultiple to set active and so on
   const {num, input, output, error, ast} = cellData;
   const textArea = useRef();
   
@@ -207,6 +215,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, setInputValue, setAct
     const rowArray = input.split('\n');
     const currentStartRowIndex = getRowNumber(start, 0);
     const currentEndRowIndex = getRowNumber(end, 0);
+    if (e.altKey) e.preventDefault();
     if (e.keyCode === 9) { // handle tab
       e.preventDefault();
       let isFirstRowModified = false;
@@ -225,7 +234,6 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, setInputValue, setAct
         // if ((currentStartRowIndex !== currentEndRowIndex) && (start === end) && (input[start-1] !== '\n' && start -1 >= 0) && value !== input) end = start = start - 1
         if ((input[start-1] !== '\n' && start -1 >= 0)) {
         }
-        console.log('first: ', isFirstRowModified, 'last: ', isLastRowModified);
         if (isFirstRowModified) start -= 1;
         end -= numOfChanges;
       }
@@ -254,18 +262,25 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, setInputValue, setAct
         start -= aboveRowLength+1;
         end -= aboveRowLength+1;
       }
+      if (start === 0) {
+        handleActiveCellChange(cellIndex, cellIndex-1, true);
+      }
     } // 38 40
-    if (e.keyCode === 40) { // up-arrow
+    if (e.keyCode === 40) { // down-arrow
       if (e.altKey) {
         if (currentEndRowIndex === rowArray.length-1) return;
         const belowRowLength = rowArray[currentEndRowIndex+1].length;
         const toBeMoved = rowArray.splice(currentStartRowIndex, (currentEndRowIndex-currentStartRowIndex)+1);
-        rowArray.splice(currentEndRowIndex+1, 0, ...toBeMoved);
+        console.log(toBeMoved, rowArray)
+        rowArray.splice(currentStartRowIndex+1, 0, ...toBeMoved);
         value = rowArray.join('\n');
         start += belowRowLength+1; // !!! eh i dont know
         end += belowRowLength+1;
       }
-    } // 38 40
+      if (input.length === end) {
+        handleActiveCellChange(cellIndex, cellIndex+1, true);
+      }
+    }
     if (e.keyCode === 13 && e.shiftKey) {
       e.preventDefault();
       alert('booo'+cellIndex)
