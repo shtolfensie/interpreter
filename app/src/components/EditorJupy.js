@@ -66,11 +66,9 @@ const fileTab = css`min-width: 110px;
 `
 //#endregion
 
-const handleClick = e => alert('its fucking late');
-const handleCloseClick = e => alert('close');
 const handleChange = e => console.log(e.target, e)
 
-const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
+const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterpreter, handleChangeFile}) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
   // const handleCellClick = (key) => setActiveCell(key);
@@ -84,6 +82,9 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
     setIsEdit(isEdit);
   }
 
+  const handleTabClick = name => handleChangeFile(name);
+  const handleTabCloseClick = name => alert('close');
+
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
   return (
@@ -94,8 +95,8 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
           key={i}
           isNotSaved={false}
           isSelected={i === selectedFileIndex}
-          handleClick={handleClick}
-          handleCloseClick={handleCloseClick}
+          handleClick={handleTabClick}
+          handleCloseClick={handleTabCloseClick}
           fileName={fileName}/>))}
       </div>
       <div className='cell-container'>
@@ -109,6 +110,7 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange}) => {
             key={i}
             cellIndex={i}
             cellData={cell}
+            handleInterpreter={handleInterpreter}
           />
         ))}
       </div>
@@ -122,10 +124,10 @@ const selectedFileTab = css`
 `
 
 const FileTab = ({fileName, handleClick, handleCloseClick, isNotSaved, isSelected}) => (
-  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={handleClick}>
+  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={() => handleClick(fileName)}>
     <div>{fileName}</div>
     <div style={{height: '16px', width: '16px'}}>{isNotSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
-    <div onClick={handleCloseClick} style={{height: '16px', width: '16px'}}>
+    <div onClick={() => handleCloseClick(fileName)} style={{height: '16px', width: '16px'}}>
       <CloseIcon style={{fontSize: '16px', height: '16px'}}/>
     </div>
   </div>
@@ -200,18 +202,18 @@ const outputArea = css`
 `
 //#endregion
 
-const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, handleActiveCellChange}) => { // !!! need to decide if one function or mmultiple to set active and so on
+const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, handleActiveCellChange, handleInterpreter}) => {
   const {num, input, output, error, ast} = cellData;
   const textArea = useRef();
   const cellDiv = useRef();
 
   useEffect(() => {    
-    if (isActive && isEdit) textArea.current.focus();
+    if (isActive && isEdit) textArea.current.focus(); // !!! when you click on the text area, this is why the cursos is not moved to where you clicked
     else if (isActive && !isEdit) {
-      textArea.current.blur();
+      // textArea.current.blur();
       cellDiv.current.focus();
     }
-  }, [isActive])
+  }, [isActive, isEdit])
   
   const handleChange = e => {
     handleCellInputChange({
@@ -223,6 +225,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
     });
   }
   const handleCellKeyDown = e => {
+    console.log('cell key');
     e.preventDefault();
     if (e.keyCode === 38 && !isEdit) handleActiveCellChange(cellIndex, cellIndex-1, false);
     if (e.keyCode === 40 && !isEdit) handleActiveCellChange(cellIndex, cellIndex+1, false);
@@ -230,17 +233,18 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
     console.log(e.keyCode);
-    if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
+    // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
     // if (e.key === 'x') console.log(getRowNumber(e.target.selectionStart, 0), "<-- row");
     let start = e.target.selectionStart;
     let end = e.target.selectionEnd;
-    if (input[end-1] === '\n') end--; // to fix moving of rows - when the newlin at the end is selected, the end row number is bigger by one
+    if (start !== end && input[end-1] === '\n') end--; // to fix moving of rows - when the newlin at the end is selected, the end row number is bigger by one
     let value = input;
     const rowArray = input.split('\n');
     const currentStartRowIndex = getRowNumber(start, 0);
     const currentEndRowIndex = getRowNumber(end, 0);
     if (e.altKey) e.preventDefault();
     if (e.keyCode === 9) { // handle tab
+      console.log('tab', currentStartRowIndex, currentEndRowIndex);
       e.preventDefault();
       let isFirstRowModified = false;
       let isLastRowModified = false;
@@ -258,7 +262,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
         // if ((currentStartRowIndex !== currentEndRowIndex) && (start === end) && (input[start-1] !== '\n' && start -1 >= 0) && value !== input) end = start = start - 1
         if ((input[start-1] !== '\n' && start -1 >= 0)) {
         }
-        if (isFirstRowModified) start -= 1;
+        if (isFirstRowModified && start !== 0) start -= 1;
         end -= numOfChanges;
       }
       else if (currentStartRowIndex !== currentEndRowIndex) {
@@ -271,6 +275,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
         end += numOfChanges;
       }
       else {
+        console.log('tab2');
         value = input.slice(0,start) + '\t' + input.slice(end);
         end = start = start + 1;
       }
@@ -307,7 +312,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
     }
     if (e.keyCode === 13 && e.shiftKey) {
       e.preventDefault();
-      alert('booo'+cellIndex)
+      handleInterpreter(input, cellIndex);
     }
 
     if (value !== input) {
@@ -323,19 +328,20 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
   const getRowNumber = (index, row) => {
     const previousNewline = input.lastIndexOf('\n', index-1);
     if (previousNewline < 0) return row;
+    if (row > 500) return 500;
     return getRowNumber(previousNewline, row+1);
   }
   const handleCellClick = () => handleActiveCellChange(cellIndex, cellIndex, false);
   const handleCellInputClick = e => {
-    e.stopPropagation();  
+    e.stopPropagation();
     handleActiveCellChange(cellIndex, cellIndex, true);
   }
   const handleInputBlur = e => {
-    if (isEdit) handleActiveCellChange(cellIndex, cellIndex, false);
+    if (isEdit && isActive) handleActiveCellChange(cellIndex, cellIndex, false);
   }
   return (
     <div className={cx(baseCell,{ [activeCell]: isActive}, { [editCell]: (isEdit && isActive)})}
-      onClick={handleCellClick}
+      onMouseDown={handleCellClick}
       onKeyDown={handleCellKeyDown}
       tabIndex='0'
       ref={cellDiv}
@@ -351,7 +357,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
           style={{lineHeight: '20px', resize: 'none', padding: '5px', width: '300px', outline: 'none'}}
           value={input}
           // onFocus={handleCellClick}
-          onClick={handleCellInputClick}
+          onMouseDown={handleCellInputClick}
           onChange={handleChange}
           onKeyDown={handleCellInputKeyDown}
           onBlur={handleInputBlur}
