@@ -3,7 +3,6 @@ import { css, cx } from 'emotion';
 
 import EditorJupy from './EditorJupy';
 import EditorClassic from './EditorClassic';
-// import FileContainer from './FileContainer';
 
 import SchInterpreter from '../interpreters/schemy.js';
 
