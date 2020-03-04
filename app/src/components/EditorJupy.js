@@ -189,6 +189,7 @@ const inputPrompt = css`
 const inputArea = css`
   flex-grow: 1;
   tab-size: 4;
+  overflow-x: auto !important;
 `
 const outputPrompt = css`
   color: #D84315;
@@ -353,6 +354,8 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
         <TextareaAutosize
           ref={textArea}
           selectionStart={0}
+          wrap='off'
+          spellCheck='false'
           className={inputArea}
           style={{lineHeight: '20px', resize: 'none', padding: '5px', width: '300px', outline: 'none'}}
           value={input}
