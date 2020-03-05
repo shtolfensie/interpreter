@@ -9,7 +9,7 @@ const TAB = '    ';
 
 //#region base css
 const baseJupy = css`width: 80%;
-  height: 900px;
+  /* height: 900px; */
   // border: 1px solid black;
   // border-radius: 4px;
   margin: 0 auto;
