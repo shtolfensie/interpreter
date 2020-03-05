@@ -135,7 +135,7 @@ const createGlobals = env => {
   // // env["cadr"] = list => list.slice(1, 2);
   env["integer?"] = a => Number.isInteger(a);
 
-  env["display"] = a => console.log(toSchemeDisplayString(a));
+  env["display"] = a => setOutput(toSchemeDisplayString(a));
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
     args = [ ...args, ...list ];
@@ -400,7 +400,8 @@ const checkProcedure = (procedure, ast) => typeof procedure !== 'function' ? err
 // };
 
 // repl();
-
+let output = [];
+const setOutput = s => {output.push(s); return;}
 class Interpreter {
   constructor(fileName, env) {
     this.filaName = fileName;
@@ -411,6 +412,7 @@ class Interpreter {
     this.error = '';
     this.ast = undefined;
     this.res = undefined;
+    output = [];
   }
   get interpretedFile() {
     return this.filaName;
@@ -425,13 +427,14 @@ class Interpreter {
     try {
       this.error = '';
       this.res = '';
+      output = [];
       this.ast = this.parser(input);
       this.ast.forEach(node => this.res = this.evaluate(node));
     } catch (err) {
       this.error = err;
     }
   
-    return {res: toSchemeDisplayString(this.res, true), error: this.error}
+    return {res: toSchemeDisplayString(this.res, true), output, error: this.error}
   }
 }
 

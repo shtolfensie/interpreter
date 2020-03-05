@@ -68,9 +68,15 @@ const fileTab = css`min-width: 110px;
 
 const handleChange = e => console.log(e.target, e)
 
-const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterpreter, handleChangeFile}) => {
+const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell}) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
+  const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
+
+  useEffect(() => {
+    console.log('new cell: ', shouldCreateNewCell);
+    if (shouldCreateNewCell) handleCreateNewCell(shouldCreateNewCell)
+  }, [shouldCreateNewCell, fileData])
   // const handleCellClick = (key) => setActiveCell(key);
   const handleCellInputChange = newCellData => {
     handleCellChange(newCellData, activeCell)
@@ -84,6 +90,13 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
 
   const handleTabClick = name => handleChangeFile(name);
   const handleTabCloseClick = name => alert('close');
+
+  const handleCreateNewCell = (newCellIndex, cellIndex = 0) => {
+    createNewCell(cellIndex, newCellIndex);
+    setActiveCell(newCellIndex);
+    setIsEdit(true);
+    setShouldCreateNewCell(false);
+  }
 
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
@@ -110,7 +123,9 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
             key={i}
             cellIndex={i}
             cellData={cell}
+            isLast={i === fileData.cells.length-1}
             handleInterpreter={handleInterpreter}
+            createNewCell={setShouldCreateNewCell}
           />
         ))}
       </div>
@@ -203,8 +218,8 @@ const outputArea = css`
 `
 //#endregion
 
-const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, handleActiveCellChange, handleInterpreter}) => {
-  const {num, input, output, error, ast} = cellData;
+const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isEdit, handleActiveCellChange, handleInterpreter, createNewCell}) => {
+  const {num, input, output, result, error, ast} = cellData;
   const textArea = useRef();
   const cellDiv = useRef();
 
@@ -217,19 +232,19 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
   }, [isActive, isEdit])
   
   const handleChange = e => {
-    handleCellInputChange({
-      num,
-      input: e.target.value,
-      output,
-      error,
-      ast
-    });
+    handleCellInputChange({ input: e.target.value });
   }
   const handleCellKeyDown = e => {
     console.log('cell key');
     e.preventDefault();
     if (e.keyCode === 38 && !isEdit) handleActiveCellChange(cellIndex, cellIndex-1, false);
     if (e.keyCode === 40 && !isEdit) handleActiveCellChange(cellIndex, cellIndex+1, false);
+    if (e.keyCode === 13 && e.shiftKey) {
+      e.preventDefault();
+      handleInterpreter(input, cellIndex);
+      if (isLast) createNewCell(cellIndex+1);
+      else handleActiveCellChange(cellIndex, cellIndex+1, false);
+    }
   }
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
@@ -314,6 +329,8 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
     if (e.keyCode === 13 && e.shiftKey) {
       e.preventDefault();
       handleInterpreter(input, cellIndex);
+      if (isLast) createNewCell(cellIndex+1);
+      else handleActiveCellChange(cellIndex, cellIndex+1, true);
     }
 
     if (value !== input) {
@@ -365,15 +382,23 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isActive, isEdit, han
           onKeyDown={handleCellInputKeyDown}
           onBlur={handleInputBlur}
         />
+      </div>
+      {Array.isArray(output) && output.map((out, i) => (
+        <div className={inOutContainer} key={i}>
+          <div className={promptContainer} />
+          <div className={outputArea}>
+            {out}
+          </div>  
         </div>
-        <div className={inOutContainer}>
+      ))}
+      {result && <div className={inOutContainer}>
         <div className={promptContainer}>
-          <div className={cx(prompt, outputPrompt)}>Out[ ]:</div>
+          <div className={cx(prompt, outputPrompt)}>Out[{num}]:</div>
         </div>
         <div className={outputArea}>
-          texty text
+          {result}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }
