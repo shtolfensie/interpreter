@@ -1,32 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { css, cx } from 'emotion';
+import { Button, ButtonGroup } from '@material-ui/core';
+import { withStyles } from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/CloseRounded';
 import CircleIcon from '@material-ui/icons/FiberManualRecord';
+import AddIcon from '@material-ui/icons/Add';
+import SaveIcon from '@material-ui/icons/Save';
+import RunIcon from '@material-ui/icons/SkipNext';
+import StopIcon from '@material-ui/icons/Stop';
+import ReloadIcon from '@material-ui/icons/Replay';
+import ReloadAndRunIcon from '@material-ui/icons/FastForward';
 
 import TextareaAutosize from 'react-autosize-textarea';
 
 const TAB = '    ';
 
 //#region base css
-const baseJupy = css`width: 80%;
-  /* height: 900px; */
-  // border: 1px solid black;
-  // border-radius: 4px;
+const baseJupy = css`
+  width: 80%;
+  /* border: 1px solid black; */
+  /* border-radius: 4px; */
   margin: 0 auto;
-  box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+  /* box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12); */
 `
 //#endregion
 //#region fileselector css
-const fileSelector = css`width: 100%;
+const fileSelectorBorderRadius = '5px';
+const fileSelector = css`
+  width: 100%;
   height: 45px;
   overflow-x: hidden;
   padding-bottom: 6px;
+  cursor: grab;
+  /* cursor: pointer; */
   :hover {
     overflow-x: scroll;
     padding-bottom: 0;
   }
   overflow-y: hidden;
   display: flex;
+  border-top-left-radius: ${fileSelectorBorderRadius};
+  border-top-right-radius: ${fileSelectorBorderRadius};
   ::-webkit-scrollbar-track {
     display: none;
     /* -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); */
@@ -41,7 +55,7 @@ const fileSelector = css`width: 100%;
   }
 
   ::-webkit-scrollbar-thumb {
-    border-radius: 3px;
+    border-radius: 0px;
     background-color: #3F51B5;
   }
 `
@@ -59,14 +73,51 @@ const fileTab = css`min-width: 110px;
   // margin-right: 10px;
   // position: relative;
   flex-shrink: 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0);
   cursor: pointer;
   :hover {
     background-color: #F1F1F1;
+    border-bottom: 2px #485ece solid;
+
+  }
+`
+const selectedFileTab = css`
+  /* background-color: rgba(33, 150, 243, 0.71); */
+  background-color: #3f51b5;
+  color: #fff;
+  border-bottom: 2px #212c63 solid;
+  :hover {
+    background-color: #314191;
   }
 `
 //#endregion
 
-const handleChange = e => console.log(e.target, e)
+const toolbar = css`
+  padding: 0.2rem 0.5rem 0.5rem 0.5rem;
+`
+
+const cellContainer = css`
+  width: 100%;
+  box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+  padding: 1rem 0;
+`
+//#region topBarContainer css
+const topBarContainer = css`
+  width: 100%;
+  /* box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12); */
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  margin-bottom: 1.5rem;
+  border-top-left-radius: ${fileSelectorBorderRadius};
+  border-top-right-radius: ${fileSelectorBorderRadius};
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+`
+//#endregion
 
 const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell}) => {
   const [activeCell, setActiveCell] = useState(0);
@@ -98,21 +149,26 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
     setShouldCreateNewCell(false);
   }
 
+  const handleNewFileAdd = () => {alert('new file')}
+
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
   return (
     <div className={baseJupy}>
-      <div className={fileSelector}>
-        {fileNameArray.map((fileName, i) => (
-        <FileTab
-          key={i}
-          isNotSaved={false}
-          isSelected={i === selectedFileIndex}
-          handleClick={handleTabClick}
-          handleCloseClick={handleTabCloseClick}
-          fileName={fileName}/>))}
+      <div className={topBarContainer}>
+        <div className={fileSelector} onDoubleClick={e => {e.preventDefault(); handleNewFileAdd();}}>
+          {fileNameArray.map((fileName, i) => (
+            <FileTab
+              key={i}
+              isNotSaved={false}
+              isSelected={i === selectedFileIndex}
+              handleClick={handleTabClick}
+              handleCloseClick={handleTabCloseClick}
+              fileName={fileName}/>))}
+        </div>
+        <Toolbar />
       </div>
-      <div className='cell-container'>
+      <div className={cellContainer}>
         {fileData.cells.map((cell, i) => (
           <Cell 
             handleCellInputChange={handleCellInputChange}
@@ -134,12 +190,8 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
   )
 }
 
-const selectedFileTab = css`
-  background-color: rgba(33, 150, 243, 0.71);
-`
-
 const FileTab = ({fileName, handleClick, handleCloseClick, isNotSaved, isSelected}) => (
-  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={() => handleClick(fileName)}>
+  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={e => {e.stopPropagation(); handleClick(fileName)}}>
     <div>{fileName}</div>
     <div style={{height: '16px', width: '16px'}}>{isNotSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
     <div onClick={() => handleCloseClick(fileName)} style={{height: '16px', width: '16px'}}>
@@ -147,6 +199,43 @@ const FileTab = ({fileName, handleClick, handleCloseClick, isNotSaved, isSelecte
     </div>
   </div>
 );
+
+const toolbarIcon = css`
+  font-size: 22px !important;
+`
+const toolbarBtnGroup = css`
+  margin-left: 0.4rem;
+`
+
+const Toolbar = () => {
+
+  const SquareButton = withStyles({
+    root: {
+      minWidth: '22px',
+      padding: '1px'
+    }
+  })(Button);
+
+  const btnVariant = 'outlined';
+  const btnThemeColor = 'primary';
+
+  return (
+    <div className={toolbar}>
+      <ButtonGroup className={toolbarBtnGroup}>
+        <SquareButton title='save file' color={btnThemeColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
+      </ButtonGroup>
+      <ButtonGroup className={toolbarBtnGroup}>
+        <SquareButton title='insert cell bellow' color={btnThemeColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>
+      </ButtonGroup>
+      <ButtonGroup className={toolbarBtnGroup}>
+        <SquareButton title='run selected cell' color={btnThemeColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
+        <SquareButton title='reload interpreter (all variables will be lost)' color={btnThemeColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
+        <SquareButton title='reload interpreter and run all cells' color={btnThemeColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
+      </ButtonGroup>
+    </div>
+  )
+}
+
 //#region Cell css
 const baseCell = css`
   display: flex;
