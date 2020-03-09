@@ -26,7 +26,7 @@ const EditorContainer = ({editor, interpreter}) => {
     padding-bottom: 1rem;
   `
 
-  const [dataSCH, setDataSCH] = useAsyncState({'untitled1': {
+  const [dataSCH, setDataSCH] = useState({'untitled1': {
     fileName: 'untitled1',
     cells: [
       { num: ' ',
@@ -68,7 +68,7 @@ const EditorContainer = ({editor, interpreter}) => {
   const [currentSCHFile, setCurrentSCHFile] = useState('untitled1');
   const [schEnvs, setSchEnvs] = useState({'untitled1': schinter1.emptyEvn, 'untitled2': schinter1.emptyEvn})
 
-  const [dataJSL, setDataJSL] = useAsyncState({'untitled1': {
+  const [dataJSL, setDataJSL] = useState({'untitled1': {
     fileName: 'untitled1',
     cells: [
       { num: ' ',
@@ -94,18 +94,19 @@ const EditorContainer = ({editor, interpreter}) => {
               : dataJSL;
   let fileNameArray = Object.keys(files);
 
-  async function handleCellChange(newCellData, cellIndex) {
+  function handleCellChange(newCellData, cellIndex) {
     let data = interpreter === 'sch' ? dataSCH : dataJSL;
     let currFile = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     let newCellArr = [...data[currFile].cells];
     newCellArr[cellIndex] = {...newCellArr[cellIndex], ...newCellData};
     console.log(newCellData, newCellArr)
     let newData = {...data};
-    newData[currFile] = { ...data[currFile], cells: newCellArr }
+    newData[currFile] = { ...data[currFile], cells: newCellArr };
+    if (newCellData.hasOwnProperty('num')) newData[currFile] = {...newData[currFile], totalNumber: newData[currFile].totalNumber+1}
     console.log(newData);
     // interpreter === 'sch' ? setDataSCH(newData) : setDataJSL(newData);
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
-    return await setData(newData);
+    return setData(newData);
   }
 
   const createNewCell = (currentCellIndex, newCellIndex) => {
@@ -120,8 +121,9 @@ const EditorContainer = ({editor, interpreter}) => {
     interpreter === 'sch' ? setDataSCH(newData) : setDataJSL(newData);
   }
 
-  async function handleInterpreter(input, cellIndex) {
+  function handleInterpreter(input, cellIndex) {
     // let currInterpreter = interpreter === 'sch' ? schInterpreters[currentFile.fileName] : null;
+    input = input.trim();
     if (input === '') return;
     let currEnvs = interpreter === 'sch' ? schEnvs : null; 
     if (currEnvs === null) return;
@@ -138,10 +140,10 @@ const EditorContainer = ({editor, interpreter}) => {
       [currentFile.fileName]: currInterpreter.env
     });
     console.log('before', dataSCH);
-    let newState = await handleCellChange({num: currNumber+1,output: result.output, result: result.res}, cellIndex);
-    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
-    newState[currentFile.fileName] = {...newState[currentFile.fileName], totalNumber: newState[currentFile.fileName].totalNumber+1}
-    setData(newState);
+    let newState = handleCellChange({num: currNumber+1,output: result.output, result: result.res}, cellIndex);
+    // const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    // newState[currentFile.fileName] = {...newState[currentFile.fileName], totalNumber: newState[currentFile.fileName].totalNumber+1}
+    // const dd = await setData(newState);
   }
   const handleChangeFile = name => {
     if (!files.hasOwnProperty(name)) return;

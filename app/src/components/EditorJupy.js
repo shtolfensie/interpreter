@@ -125,9 +125,10 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
 
   useEffect(() => {
-    console.log('new cell: ', shouldCreateNewCell);
-    if (shouldCreateNewCell) handleCreateNewCell(shouldCreateNewCell)
-  }, [shouldCreateNewCell, fileData])
+    if (shouldCreateNewCell) {
+      handleCreateNewCell(shouldCreateNewCell);
+    }
+  }, [fileData, shouldCreateNewCell])
   // const handleCellClick = (key) => setActiveCell(key);
   const handleCellInputChange = newCellData => {
     handleCellChange(newCellData, activeCell)
