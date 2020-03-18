@@ -85,6 +85,8 @@ const environment = ({ varNames, args, outer }) => {
     env[varNames[i]] = args[i];
   }
 
+  env.display = a => setOutput(toSchemeDisplayString(a));
+
   env.find = find;
 
   return env;
@@ -135,7 +137,7 @@ const createGlobals = env => {
   // // env["cadr"] = list => list.slice(1, 2);
   env["integer?"] = a => Number.isInteger(a);
 
-  env["display"] = a => setOutput(toSchemeDisplayString(a));
+  // env["display"] = a => setOutput(toSchemeDisplayString(a));
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
     args = [ ...args, ...list ];
@@ -406,7 +408,11 @@ class Interpreter {
   constructor(fileName, env) {
     this.filaName = fileName;
     this.parser = Parser;
-    if (env) globalEnv = env;
+    if (env) {
+      // env.find = recreateFind(env);
+      globalEnv = env;
+    }
+    // if (testEnv) globalEnv = environment({varNames: testEnv.varNames, args: testEnv.args, outer: env.outer});
     console.log('new inter', globalEnv);
     this.evaluate = evaluate;
     this.error = '';
@@ -423,6 +429,9 @@ class Interpreter {
   get emptyEvn() {
     return createGlobals(environment({ varNames: [], args: [], outer: null }));
   }
+  correctEnv(testEnv) {
+    return environment({varNames: testEnv.varNames, args: testEnv.args, outer: testEnv.outer});
+  }
   interpret(input) {
     try {
       this.error = '';
@@ -436,6 +445,21 @@ class Interpreter {
   
     return {res: toSchemeDisplayString(this.res, true), output, error: this.error}
   }
+}
+
+const recreateFind = env => {
+  const find = variable => {
+    if (env.hasOwnProperty(variable)) {
+      // if env has a variable, return it
+      return env;
+    }
+    else {
+      // otherwise, try looking for it in the outer env
+      // return Object.entries(outer).length !== 0 ? outer.find(variable) : null;
+      return env.outer.find(variable);
+    }
+  };
+  return find;
 }
 
 export default Interpreter;

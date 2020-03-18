@@ -17,7 +17,7 @@ const TAB = '    ';
 
 //#region base css
 const baseJupy = css`
-  width: 80%;
+  width: 70%;
   /* border: 1px solid black; */
   /* border-radius: 4px; */
   margin: 0 auto;
@@ -119,7 +119,7 @@ const topBarContainer = css`
 `
 //#endregion
 
-const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell}) => {
+const EditorJupy = ({fileData, fileNameArray, savedArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell, handleFileSave, handleFileClose}) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
@@ -140,7 +140,7 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
     setIsEdit(isEdit);
   }
 
-  const handleTabClick = name => handleChangeFile(name);
+  const handleTabClick = id => handleChangeFile(id);
   const handleTabCloseClick = name => alert('close');
 
   const handleCreateNewCell = (newCellIndex, cellIndex = 0) => {
@@ -153,21 +153,30 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
   const handleNewFileAdd = () => {alert('new file')}
 
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
-  let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
+  // let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
+  let selectedFileIndex = 0;
+  fileNameArray.forEach((file, i) => {
+    if (file[0] === fileData.fileName) selectedFileIndex = i;
+  })
   return (
     <div className={baseJupy}>
       <div className={topBarContainer}>
         <div className={fileSelector} onDoubleClick={e => {e.preventDefault(); handleNewFileAdd();}}>
-          {fileNameArray.map((fileName, i) => (
+          {fileNameArray.map((file, i) => (
             <FileTab
               key={i}
               isNotSaved={false}
               isSelected={i === selectedFileIndex}
               handleClick={handleTabClick}
-              handleCloseClick={handleTabCloseClick}
-              fileName={fileName}/>))}
+              handleCloseClick={handleFileClose}
+              fileName={file[0]}
+              fileId={file[1]}
+              isSaved={savedArray[i]}
+            />
+
+          ))}
         </div>
-        <Toolbar />
+        <Toolbar saveFile={handleFileSave}/>
       </div>
       <div className={cellContainer}>
         {fileData.cells.map((cell, i) => (
@@ -191,11 +200,11 @@ const EditorJupy = ({fileData, fileNameArray, handleCellChange, handleInterprete
   )
 }
 
-const FileTab = ({fileName, handleClick, handleCloseClick, isNotSaved, isSelected}) => (
-  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={e => {e.stopPropagation(); handleClick(fileName)}}>
+const FileTab = ({fileName, fileId, handleClick, handleCloseClick, isSaved, isSelected}) => (
+  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={e => {e.stopPropagation(); handleClick(fileId)}}>
     <div>{fileName}</div>
-    <div style={{height: '16px', width: '16px'}}>{isNotSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
-    <div onClick={() => handleCloseClick(fileName)} style={{height: '16px', width: '16px'}}>
+    <div style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
+    <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
       <CloseIcon style={{fontSize: '16px', height: '16px'}}/>
     </div>
   </div>
@@ -208,7 +217,7 @@ const toolbarBtnGroup = css`
   margin-left: 0.4rem;
 `
 
-const Toolbar = () => {
+const Toolbar = ({ saveFile }) => {
 
   const SquareButton = withStyles({
     root: {
@@ -221,9 +230,9 @@ const Toolbar = () => {
   const btnThemeColor = 'primary';
 
   return (
-    <div className={toolbar}>
+    <div className={toolbar} onClick={() => alert('click')}>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='save file' color={btnThemeColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton onMouseUp={saveFile} title='save file' color={btnThemeColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
         <SquareButton title='insert cell bellow' color={btnThemeColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>
