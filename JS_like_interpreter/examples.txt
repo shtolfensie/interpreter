@@ -15,12 +15,14 @@ print(func()); -- this one i think. it will make it easier. just define it as a 
 
 program: statementList
 statementList: statement+
-statement: (variableAssign | functionCall) SEMI | empty
+statement: (variableStatement | functionCall) SEMI | expr | empty
 empty: 
-variableAssign: VAR variableDeclaration ASSIGN (expr | functionDeclaration)
-variableDeclaration: ID
+variableStatement: variableDeclaration | variableAssign
+variableAssign: variableDeclaration ASSIGN (expr | functionDeclaration)
+variableDeclaration: VAR ID
+varuableDeclarationFunction: ID
 functionCall: ID LPAREN (expr (COMMA expr)*)* RPAREN
-functionDeclaration: LPAREN (variableDeclaration) RPAREN ARROW block
+functionDeclaration: LPAREN (variableDeclarationFunction)* RPAREN ARROW block
 block: LCURLY statementList RCURLY
 expr: term ((PLUS | MINUS) term)*
 term: factor ((TIMES | DIVIDED) factor)*
