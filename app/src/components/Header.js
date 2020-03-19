@@ -33,7 +33,6 @@ const Header = ({handleInterpreterChange, handleEditorChange, isEditorClassic, i
           <div className={classes.grow}/>
           <FirebaseContext.Consumer>
             {firebase => <Login firebase={firebase}/>}
-
           </FirebaseContext.Consumer>
         </Toolbar>
       </AppBar>
