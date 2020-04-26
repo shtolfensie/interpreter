@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { css, cx } from 'emotion';
-import { Button, ButtonGroup } from '@material-ui/core';
+import { Button, ButtonGroup, SvgIcon } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/CloseRounded';
 import CircleIcon from '@material-ui/icons/FiberManualRecord';
@@ -10,10 +10,14 @@ import RunIcon from '@material-ui/icons/SkipNext';
 import StopIcon from '@material-ui/icons/Stop';
 import ReloadIcon from '@material-ui/icons/Replay';
 import ReloadAndRunIcon from '@material-ui/icons/FastForward';
+// import CopyIcon from '@material-ui/icons/FileCopy';
 
 import TextareaAutosize from 'react-autosize-textarea';
 
 const TAB = '    ';
+const CutIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="cut" class="svg-inline--fa fa-cut fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M278.06 256L444.48 89.57c4.69-4.69 4.69-12.29 0-16.97-32.8-32.8-85.99-32.8-118.79 0L210.18 188.12l-24.86-24.86c4.31-10.92 6.68-22.81 6.68-35.26 0-53.02-42.98-96-96-96S0 74.98 0 128s42.98 96 96 96c4.54 0 8.99-.32 13.36-.93L142.29 256l-32.93 32.93c-4.37-.61-8.83-.93-13.36-.93-53.02 0-96 42.98-96 96s42.98 96 96 96 96-42.98 96-96c0-12.45-2.37-24.34-6.68-35.26l24.86-24.86L325.69 439.4c32.8 32.8 85.99 32.8 118.79 0 4.69-4.68 4.69-12.28 0-16.97L278.06 256zM96 160c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32zm0 256c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32z"></path></svg>;
+const PasteIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="clipboard" class="svg-inline--fa fa-clipboard fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M384 112v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h80c0-35.29 28.71-64 64-64s64 28.71 64 64h80c26.51 0 48 21.49 48 48zM192 40c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24m96 114v-20a6 6 0 0 0-6-6H102a6 6 0 0 0-6 6v20a6 6 0 0 0 6 6h180a6 6 0 0 0 6-6z"></path></svg>;
+const CopyIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="copy" class="svg-inline--fa fa-copy fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M320 448v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V120c0-13.255 10.745-24 24-24h72v296c0 30.879 25.121 56 56 56h168zm0-344V0H152c-13.255 0-24 10.745-24 24v368c0 13.255 10.745 24 24 24h272c13.255 0 24-10.745 24-24V128H344c-13.2 0-24-10.8-24-24zm120.971-31.029L375.029 7.029A24 24 0 0 0 358.059 0H352v96h96v-6.059a24 24 0 0 0-7.029-16.97z"></path></svg>;
 
 //#region base css
 const baseJupy = css`
@@ -94,6 +98,8 @@ const selectedFileTab = css`
 
 const toolbar = css`
   padding: 0.2rem 0.5rem 0.5rem 0.5rem;
+  display: flex;
+  align-items: center;
 `
 
 const cellContainer = css`
@@ -119,17 +125,24 @@ const topBarContainer = css`
 `
 //#endregion
 
-const EditorJupy = ({fileData, fileNameArray, savedArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell, handleFileSave, handleFileClose}) => {
+const EditorJupy = ({fileData, activeFilesArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell, handleFileSave, handleFileClose, handleResetEnv, handleClipboard }) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
+  const [shouldSetActive, setShouldSetActive] = useState(false);
 
   useEffect(() => {
-    if (shouldCreateNewCell) {
+    if (shouldCreateNewCell !== false) {
       handleCreateNewCell(shouldCreateNewCell);
     }
-  }, [fileData, shouldCreateNewCell])
-  // const handleCellClick = (key) => setActiveCell(key);
+  }, [fileData, shouldCreateNewCell]);
+
+  useEffect(() => {
+    if (shouldSetActive !== false) {
+      setActiveCell(shouldSetActive);
+      setShouldSetActive(false);
+    }
+  }, [fileData, shouldSetActive]);
   const handleCellInputChange = newCellData => {
     handleCellChange(newCellData, activeCell)
   }
@@ -155,14 +168,16 @@ const EditorJupy = ({fileData, fileNameArray, savedArray, handleCellChange, hand
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   // let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
   let selectedFileIndex = 0;
-  fileNameArray.forEach((file, i) => {
-    if (file[0] === fileData.fileName) selectedFileIndex = i;
+  console.log(activeFilesArray)
+  console.log(fileData)
+  activeFilesArray.forEach((file, i) => {
+    if (file[1] === fileData.id) selectedFileIndex = i;
   })
   return (
     <div className={baseJupy}>
       <div className={topBarContainer}>
         <div className={fileSelector} onDoubleClick={e => {e.preventDefault(); handleNewFileAdd();}}>
-          {fileNameArray.map((file, i) => (
+          {activeFilesArray.map((file, i) => (
             <FileTab
               key={i}
               isNotSaved={false}
@@ -171,12 +186,21 @@ const EditorJupy = ({fileData, fileNameArray, savedArray, handleCellChange, hand
               handleCloseClick={handleFileClose}
               fileName={file[0]}
               fileId={file[1]}
-              isSaved={savedArray[i]}
+              isSaved={file[2]}
             />
 
           ))}
         </div>
-        <Toolbar saveFile={handleFileSave}/>
+        <Toolbar
+          saveFile={handleFileSave}
+          handleCreateNewCell={handleCreateNewCell}
+          handleInterpreter={handleInterpreter}
+          handleResetEnv={handleResetEnv}
+          handleClipboard={handleClipboard}
+          setShouldSetActive={setShouldSetActive}
+          fileData={fileData}
+          activeCell={activeCell}
+        />
       </div>
       <div className={cellContainer}>
         {fileData.cells.map((cell, i) => (
@@ -215,9 +239,10 @@ const toolbarIcon = css`
 `
 const toolbarBtnGroup = css`
   margin-left: 0.4rem;
+  height: 100%;
 `
 
-const Toolbar = ({ saveFile }) => {
+const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleResetEnv, handleClipboard, setShouldSetActive, fileData, activeCell }) => {
 
   const SquareButton = withStyles({
     root: {
@@ -229,17 +254,30 @@ const Toolbar = ({ saveFile }) => {
   const btnVariant = 'outlined';
   const btnThemeColor = 'primary';
 
+  const doClipboard = (operation, cellIndex = activeCell) => {
+    handleClipboard(operation, cellIndex);
+    if (operation === 'cut') {
+      if (cellIndex > fileData.cells.length-1) cellIndex-=1;
+      setShouldSetActive(cellIndex);
+    }
+  }
+
   return (
     <div className={toolbar} onClick={() => alert('click')}>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton onMouseUp={saveFile} title='save file' color={btnThemeColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='save file' onMouseUp={saveFile} color={btnThemeColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='insert cell bellow' color={btnThemeColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='insert cell bellow' onMouseUp={() => handleCreateNewCell(activeCell+1)} color={btnThemeColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='run selected cell' color={btnThemeColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
-        <SquareButton title='reload interpreter (all variables will be lost)' color={btnThemeColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
+        <SquareButton title='cut selected cell' onMouseUp={() => doClipboard('cut')} color={btnThemeColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{CutIcon}</SvgIcon></SquareButton>
+        <SquareButton title='copy selected cell' onMouseUp={() => doClipboard('copy')} color={btnThemeColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{PasteIcon}</SvgIcon></SquareButton>
+        <SquareButton title='paste cells below' onMouseUp={() => doClipboard('paste', activeCell+1)} color={btnThemeColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{CopyIcon}</SvgIcon></SquareButton>
+      </ButtonGroup>
+      <ButtonGroup className={toolbarBtnGroup}>
+        <SquareButton title='run selected cell' onMouseUp={() => handleInterpreter(fileData.cells[activeCell].input, activeCell)} color={btnThemeColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
+        <SquareButton title='reload interpreter (all variables will be lost)' onMouseUp={handleResetEnv} color={btnThemeColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
         <SquareButton title='reload interpreter and run all cells' color={btnThemeColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
     </div>
@@ -323,7 +361,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
   const cellDiv = useRef();
 
   useEffect(() => {    
-    if (isActive && isEdit) textArea.current.focus(); // !!! when you click on the text area, this is why the cursos is not moved to where you clicked
+    if (isActive && isEdit) textArea.current.focus(); // !!! it works now? when you click on the text area, this is why the cursos is not moved to where you clicked
     else if (isActive && !isEdit) {
       // textArea.current.blur();
       cellDiv.current.focus();
