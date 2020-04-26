@@ -3,12 +3,13 @@ import { css, cx } from 'emotion';
 import { FirebaseContext } from './Firebase';
 
 import EditorJupy from './EditorJupy';
-import EditorClassic from './EditorClassic';
 import FileExplorer from './FileExplorer';
 
 import autoId from '../utils/autoId';
 
 import SchInterpreter from '../interpreters/schemy.js';
+
+import { emptySchFile, emptyJslFile } from '../utils/emptyfiles.js';
 
 const schinter1 = new SchInterpreter('untitled1');
 const emptyEvn = schinter1.emptyEvn;
@@ -28,9 +29,9 @@ const id1 = '5ZNt1S2nrWKqDBtpvAaI';
 const id2 = autoId();
 const id3 = autoId();
 
-const EditorContainer = ({editor, interpreter, firebase}) => {
+const EditorContainer = ({interpreter, firebase}) => {
 
-  const baseContainer = css`${editor === 'jupy' ? 'min-' : ''}height: calc(100vh - 48px - 1rem);
+  const baseContainer = css`min-height: calc(100vh - 48px - 1rem);
     margin-top: 1rem;
     padding-bottom: 1rem;
   `
@@ -60,9 +61,8 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
         ast: '' },
     ],
     totalNumber: 0,
-    wholeProgTxt: '(define x 10)\n(display x)',
+    wholeProgTxt: '',
     fileType: 'sch',
-    editor: 'jupy',
     isSaved: false,
     id: id1
   },
@@ -83,15 +83,16 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
         ast: '' },
     ],
     totalNumber: 0,
-    wholeProgTxt: '(define x 10)\n(display x)',
+    wholeProgTxt: '',
     isSaved: true,
     fileType: 'sch',
-    editor: 'jupy',
+
     id: id2
   },
 });
   const [currentSCHFile, setCurrentSCHFile] = useState(id1);
   const [schEnvs, setSchEnvs] = useState({[id1]: schinter1.emptyEvn, [id2]: schinter1.emptyEvn})
+  const [schClipboard, setSchClipboard] = useState(null);
 
   const [dataJSL, setDataJSL] = useState({[id3]: {
     fileName: 'untitled1',
@@ -106,13 +107,12 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
     totalNumber: 0,
     wholeProgTxt: 'var num = 87;',
     id: id3,
-    editor: 'jupy',
     fileType: 'jsl',
     isSaved: false
   }});
   const [currentJSLFile, setCurrentJSLFile] = useState(id3);
-
   const [jslEnvs, setJslEnvs] = useState({[id3]: {}});
+  const [jslClipboard, setJslClipboard] = useState(null);
 
   let currentFile = interpreter === 'sch'
                     ? dataSCH[currentSCHFile]
@@ -123,8 +123,23 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
   let files = interpreter === 'sch'
               ? dataSCH
               : dataJSL;
-  let fileNameArray = Object.keys(files).map(fileId => [files[fileId].fileName, files[fileId].id]);
-  let savedArray = Object.keys(files).map(fileId => files[fileId].isSaved);
+
+  // useEffect(() => {
+  //   alert('alksjdf')
+  //   const currentFile = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+  //   if (typeof currentFile === 'object' && currentFile !== null) {
+  //     if (!currentFile.active) return;
+  //     const setCurrentFile = interpreter === 'sch' ? setCurrentSCHFile : setCurrentJSLFile;
+  //     const data = interpreter === 'sch' ? dataSCH : dataJSL;
+  //     if (Object.keys(data).length === 0) {
+  //       // !!! handle no open files
+  //     }
+  //     else if (currentFile.oldIndex === 0) setCurrentFile(data[Object.keys(data)[0]]);
+  //     else setCurrentFile(data[Object.keys(data)[currentFile.oldIndex - 1]]);
+  //   }
+  // }, [currentJSLFile, currentSCHFile])
+
+  let activeFilesArray = Object.keys(files).map(fileId => [files[fileId].fileName, files[fileId].id, files[fileId].isSaved]);
 
   function handleCellChange(newCellData, cellIndex) {
     let data = interpreter === 'sch' ? dataSCH : dataJSL;
@@ -153,7 +168,7 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
     interpreter === 'sch' ? setDataSCH(newData) : setDataJSL(newData);
   }
 
-  function handleInterpreter(input, cellIndex) {
+  const handleInterpreter = (input, cellIndex) => {
     // let currInterpreter = interpreter === 'sch' ? schInterpreters[currentFile.fileName] : null;
     input = input.trim();
     if (input === '') return;
@@ -173,10 +188,7 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
       [fileId]: currInterpreter.env
     });
     console.log('before', dataSCH);
-    let newState = handleCellChange({num: currNumber+1,output: result.output ? result.output : '', result: result.res ? result.res : ''}, cellIndex);
-    // const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
-    // newState[currentFile.fileName] = {...newState[currentFile.fileName], totalNumber: newState[currentFile.fileName].totalNumber+1}
-    // const dd = await setData(newState);
+    handleCellChange({num: currNumber+1,output: result.output ? result.output : '', result: result.res ? result.res : ''}, cellIndex);
   }
   const handleChangeFile = id => {
     if (!files.hasOwnProperty(id)) return;
@@ -212,48 +224,91 @@ const EditorContainer = ({editor, interpreter, firebase}) => {
     firebase.db.collection(authUser.uid).doc(fileId).set(file);
   }
 
+  const createNewFile = (fileType, fileName) => {
+    let newFile = fileType === 'sch' ? emptySchFile : emptyJslFile;
+    let newId = autoId();
+    newFile.fileName = fileName;
+    newFile.id = newId;
+    return {id: newId, data: newFile};
+  }
+
   const handleFileClose = fileId => {
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const oldIndex = Object.keys(data).indexOf(fileId);
+    const currentFileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     delete data[fileId];
     const newData = { ...data };
+    if (fileId === currentFileId) {
+      const setCurrentFile = interpreter === 'sch' ? setCurrentSCHFile : setCurrentJSLFile;
+      let newId;
+      if (Object.keys(newData).length === 0) {
+        let newFile = createNewFile(interpreter, 'untitled1'); // !!! will be used by handleCreateNewFile, that will also update the state
+        newData[newFile.id] = newFile.data;
+        newId = newFile.id;
+      }
+      else if (oldIndex === 0) newId = Object.keys(newData)[0];
+      else newId = Object.keys(newData)[oldIndex-1];
+      setCurrentFile(newId);
+    }
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
-    const setEnv = interpreter === 'sch' ? setSchEnvs : setJslEnvs;
+    const setEnvs = interpreter === 'sch' ? setSchEnvs : setJslEnvs;
     const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
     delete envs[fileId];
     const newEnvs = { ...envs };
+    console.log(newData)
+    console.log(newEnvs)
     setData(newData);
-    setEnv(newEnvs);
+    setEnvs(newEnvs);
+  }
+
+  const handleResetEnv = () => {
+    const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+    const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
+    const setEnvs = interpreter === 'sch' ? setSchEnvs : setJslEnvs;
+    const newEnvs = { ...envs };
+    newEnvs[fileId] = schinter1.emptyEvn;
+    setEnvs(newEnvs);
+  }
+
+  const handleClipboard = (operation, cellIndex) => {
+    const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+    const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    const clipboard = interpreter === 'sch' ? schClipboard : jslClipboard;
+    const setClipboard = interpreter === 'sch' ? setSchClipboard : setJslClipboard;
+    let toClipboard = null;
+    let newData = null;
+
+    if (operation === 'copy') {
+      toClipboard = data[fileId].cells[cellIndex];
+    }
+    else if (operation === 'cut') {
+      toClipboard = data[fileId].cells.splice(cellIndex, 1)[0];
+    }
+    else if (operation === 'paste' && clipboard !== null) {
+      data[fileId].cells.splice(cellIndex, 0, clipboard);
+      newData = { ...data };
+    }
+    if (toClipboard !== null) setClipboard(toClipboard);
+    if (newData !== null) setData(newData);
   }
 
   return (
     <>
       <FileExplorer firebase={firebase} interpreter={interpreter} handleFileSelect={handleFileImport}/>
       <div className={baseContainer}>
-        {editor === 'jupy'
-          ? <EditorJupy
-            fileData={currentFile}
-            fileNameArray={fileNameArray}
-            savedArray={savedArray}
-            handleCellChange={handleCellChange}
-            handleInterpreter={handleInterpreter}
-            handleChangeFile={handleChangeFile}
-            createNewCell={createNewCell}
-            handleFileSave={handleFileSave}
-            handleFileClose={handleFileClose}
+        <EditorJupy
+          fileData={currentFile}
+          activeFilesArray={activeFilesArray}
+          handleCellChange={handleCellChange}
+          handleInterpreter={handleInterpreter}
+          handleChangeFile={handleChangeFile}
+          createNewCell={createNewCell}
+          handleFileSave={handleFileSave}
+          handleFileClose={handleFileClose}
+          handleResetEnv={handleResetEnv}
+          handleClipboard={handleClipboard}
           />
-          : <EditorClassic fileData={currentFile} fileNameArray={fileNameArray}/>}
-        {/* {fileNameArray.map((fileName, i) => (
-        <FileContainer
-        key={i}
-        editor={editor}
-        interpreter={interpreter}
-        fileName={fileName}
-        fileData={currentFile}
-        fileNameArray={fileNameArray}
-        handleCellChange={handleCellChange}
-        handleChangeFile={handleChangeFile}
-        />
-        ))} */}
       </div>
     </>
   )
