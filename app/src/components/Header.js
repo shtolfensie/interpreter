@@ -19,7 +19,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Header = ({handleInterpreterChange, handleEditorChange, isEditorClassic, isInterpreterJSlike}) => {
+const Header = ({handleInterpreterChange, isInterpreterJSlike}) => {
   const classes = useStyles();
   const [user, setUser] = useState(false);
   
@@ -29,7 +29,6 @@ const Header = ({handleInterpreterChange, handleEditorChange, isEditorClassic, i
       <AppBar position="static">
         <Toolbar variant="dense">
           <AorBSwitch a='Schemy' b='JS-Like' handleChange={handleInterpreterChange} isChecked={isInterpreterJSlike}/>
-          <AorBSwitch a='jupy' b='classic' handleChange={handleEditorChange} isChecked={isEditorClassic}/>
           <div className={classes.grow}/>
           <FirebaseContext.Consumer>
             {firebase => <Login firebase={firebase}/>}
