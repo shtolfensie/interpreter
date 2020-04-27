@@ -43,7 +43,7 @@ const fileSelector = css`
   }
   overflow-y: hidden;
   display: flex;
-  border-top-left-radius: ${fileSelectorBorderRadius};
+  /* border-top-left-radius: ${fileSelectorBorderRadius}; */
   border-top-right-radius: ${fileSelectorBorderRadius};
   ::-webkit-scrollbar-track {
     display: none;
@@ -74,9 +74,10 @@ const fileTab = css`min-width: 110px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  // margin-right: 10px;
+  margin-right: 2px;
   // position: relative;
   flex-shrink: 0;
+  background-color: #F8F7F7;
   border-bottom: 2px solid rgba(255, 255, 255, 0);
   cursor: pointer;
   :hover {
@@ -114,8 +115,8 @@ const topBarContainer = css`
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
   border: 1px solid rgba(0, 0, 0, 0.12);
   margin-bottom: 1.5rem;
-  border-top-left-radius: ${fileSelectorBorderRadius};
   border-top-right-radius: ${fileSelectorBorderRadius};
+  border-top-left-radius: ${fileSelectorBorderRadius};
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -123,9 +124,44 @@ const topBarContainer = css`
   -ms-user-select: none;
   user-select: none;
 `
+const topBarFilesRow = css`
+  width: 100%;
+  display: flex;
+  border-top-left-radius: ${fileSelectorBorderRadius};
+`
 //#endregion
 
-const EditorJupy = ({fileData, activeFilesArray, handleCellChange, handleInterpreter, handleChangeFile, createNewCell, handleFileSave, handleFileClose, handleResetEnv, handleClipboard }) => {
+//#region addFileBtn
+const addFileBtnContainer = css`
+  width: 30px;
+  padding-bottom: 8px;
+  height: 100%;
+`
+const addFileBtn = css`
+  /* padding: 6px 7px 5px 4px; */
+  padding: 1px 7px 2px 4px;
+  height: 100%;
+  background-color: #2196f3;
+  color: #e0e5ea;
+  border-bottom: 2px #212c63 solid;
+  border-top-left-radius: ${fileSelectorBorderRadius};
+  cursor: pointer;
+  height: 100%;
+`
+//#endregion
+
+const EditorJupy = ({
+  fileData,
+  activeFilesArray,
+  handleCellChange,
+  handleInterpreter,
+  handleChangeFile,
+  createNewCell,
+  handleAddFileBtn,
+  handleFileSave,
+  handleFileClose,
+  handleResetEnv,
+  handleClipboard }) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
@@ -154,7 +190,6 @@ const EditorJupy = ({fileData, activeFilesArray, handleCellChange, handleInterpr
   }
 
   const handleTabClick = id => handleChangeFile(id);
-  const handleTabCloseClick = name => alert('close');
 
   const handleCreateNewCell = (newCellIndex, cellIndex = 0) => {
     createNewCell(cellIndex, newCellIndex);
@@ -163,7 +198,6 @@ const EditorJupy = ({fileData, activeFilesArray, handleCellChange, handleInterpr
     setShouldCreateNewCell(false);
   }
 
-  const handleNewFileAdd = () => {alert('new file')}
 
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   // let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
@@ -176,20 +210,27 @@ const EditorJupy = ({fileData, activeFilesArray, handleCellChange, handleInterpr
   return (
     <div className={baseJupy}>
       <div className={topBarContainer}>
-        <div className={fileSelector} onDoubleClick={e => {e.preventDefault(); handleNewFileAdd();}}>
-          {activeFilesArray.map((file, i) => (
-            <FileTab
-              key={i}
-              isNotSaved={false}
-              isSelected={i === selectedFileIndex}
-              handleClick={handleTabClick}
-              handleCloseClick={handleFileClose}
-              fileName={file[0]}
-              fileId={file[1]}
-              isSaved={file[2]}
-            />
+        <div className={topBarFilesRow}>
+          <div className={addFileBtnContainer}>
+            <div className={addFileBtn} onClick={() =>  handleAddFileBtn()} >
+              <AddIcon style={{marginTop: '6px'}}/>
+            </div>
+          </div>
+          <div className={fileSelector} onDoubleClick={e => {e.preventDefault(); handleAddFileBtn();}}>
+            {activeFilesArray.map((file, i) => (
+              <FileTab
+                key={i}
+                isNotSaved={false}
+                isSelected={i === selectedFileIndex}
+                handleClick={handleTabClick}
+                handleCloseClick={handleFileClose}
+                fileName={file[0]}
+                fileId={file[1]}
+                isSaved={file[2]}
+              />
 
-          ))}
+            ))}
+          </div>
         </div>
         <Toolbar
           saveFile={handleFileSave}
@@ -225,7 +266,15 @@ const EditorJupy = ({fileData, activeFilesArray, handleCellChange, handleInterpr
 }
 
 const FileTab = ({fileName, fileId, handleClick, handleCloseClick, isSaved, isSelected}) => (
-  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`} onClick={e => {e.stopPropagation(); handleClick(fileId)}}>
+  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`}
+    onMouseDown={e => {
+      e.stopPropagation();
+      if (e.button === 1) handleCloseClick(fileId);
+      else handleClick(fileId);
+      }
+    }
+    onDoubleClick={e => e.stopPropagation()}
+  >
     <div>{fileName}</div>
     <div style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
     <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
