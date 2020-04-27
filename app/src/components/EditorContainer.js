@@ -117,7 +117,6 @@ const EditorContainer = ({interpreter, firebase}) => {
   let currentFile = interpreter === 'sch'
                     ? dataSCH[currentSCHFile]
                     : dataJSL[currentJSLFile];
-  console.log(currentSCHFile)
   // let fileNameArray = interpreter === 'sch'
   //                   ? Object.keys(dataSCH)
   //                   : Object.keys(dataJSL);
@@ -151,11 +150,11 @@ const EditorContainer = ({interpreter, firebase}) => {
     let currFile = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     let newCellArr = [...data[currFile].cells];
     newCellArr[cellIndex] = {...newCellArr[cellIndex], ...newCellData};
-    console.log(newCellData, newCellArr)
+    // console.log(newCellData, newCellArr)
     let newData = {...data};
     newData[currFile] = { ...data[currFile], cells: newCellArr, isSaved: false };
     if (newCellData.hasOwnProperty('num')) newData[currFile] = {...newData[currFile], totalNumber: newData[currFile].totalNumber+1}
-    console.log(newData);
+    // console.log(newData);
     // interpreter === 'sch' ? setDataSCH(newData) : setDataJSL(newData);
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
     return setData(newData);

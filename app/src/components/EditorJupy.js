@@ -202,8 +202,8 @@ const EditorJupy = ({
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   // let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
   let selectedFileIndex = 0;
-  console.log(activeFilesArray)
-  console.log(fileData)
+  // console.log(activeFilesArray)
+  // console.log(fileData)
   activeFilesArray.forEach((file, i) => {
     if (file[1] === fileData.id) selectedFileIndex = i;
   })
@@ -424,7 +424,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
     handleCellInputChange({ input: e.target.value });
   }
   const handleCellKeyDown = e => {
-    console.log('cell key');
+    // console.log('cell key');
     e.preventDefault();
     if (e.keyCode === 38 && !isEdit) handleActiveCellChange(cellIndex, cellIndex-1, false);
     if (e.keyCode === 40 && !isEdit) handleActiveCellChange(cellIndex, cellIndex+1, false);
@@ -437,7 +437,9 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
   }
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
-    console.log(e.keyCode);
+    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13) return;
+    console.log('hejo');
+    
     // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
     // if (e.key === 'x') console.log(getRowNumber(e.target.selectionStart, 0), "<-- row");
     let start = e.target.selectionStart;
@@ -485,8 +487,13 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
         end = start = start + 1;
       }
     }
-    if (e.keyCode === 38) { // up-arrow
-      if (e.altKey) {
+    else if (e.keyCode === 38) { // up-arrow
+      if (e.altKey && e.shiftKey) {
+        let toBeCopied = rowArray.slice(currentStartRowIndex, currentEndRowIndex+1);
+        rowArray.splice(currentEndRowIndex+1, 0, ...toBeCopied);
+        value = rowArray.join('\n');
+      }
+      else if (e.altKey) {
         if (currentStartRowIndex === 0) return;
         const toBeMoved = rowArray.splice(currentStartRowIndex, (currentEndRowIndex-currentStartRowIndex)+1);
         const aboveRowLength = rowArray[currentStartRowIndex-1].length;
@@ -499,9 +506,18 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
       else if ((start === 0 && end === start) && isEdit) {
         handleActiveCellChange(cellIndex, cellIndex-1, true);
       }
-    } // 38 40
-    if (e.keyCode === 40) { // down-arrow
-      if (e.altKey) {
+    }
+    else if (e.keyCode === 40) { // down-arrow
+      if (e.altKey && e.shiftKey) {
+        let toBeCopied = rowArray.slice(currentStartRowIndex, currentEndRowIndex+1);
+        rowArray.splice(currentEndRowIndex+1, 0, ...toBeCopied);
+        for (let i = 0; i < toBeCopied.length; i++) {
+          start += toBeCopied[i].length + 1;
+          end += toBeCopied[i].length + 1;
+        }
+        value = rowArray.join('\n');
+      }
+      else if (e.altKey) {
         if (currentEndRowIndex === rowArray.length-1) return;
         const belowRowLength = rowArray[currentEndRowIndex+1].length;
         const toBeMoved = rowArray.splice(currentStartRowIndex, (currentEndRowIndex-currentStartRowIndex)+1);
@@ -515,11 +531,19 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
         handleActiveCellChange(cellIndex, cellIndex+1, true);
       }
     }
-    if (e.keyCode === 13 && e.shiftKey) {
+    else if (e.keyCode === 13 && e.shiftKey) {
       e.preventDefault();
       handleInterpreter(input, cellIndex);
       if (isLast) createNewCell(cellIndex+1);
       else handleActiveCellChange(cellIndex, cellIndex+1, true);
+    }
+
+    const bracketMap = {'[':']','{':'}','(':')'};
+    if (Object.keys(bracketMap).includes(e.key)) {
+      e.preventDefault();
+      value = value.slice(0, start) + e.key + value.slice(start, end) + bracketMap[e.key] + value.slice(end);
+      start++;
+      end++;
     }
 
     if (value !== input) {
