@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
 const AorBSwitch = ({a, b, isChecked, handleChange}) => {
   const classes = useStyles();
   return (
-    <Typography component="div" className={classes.root}>
+    <Typography component="div" className={classes.root} style={{userSelect: 'none'}}>
       <Grid component="label" container alignItems="center" spacing={1}>
         <Grid item>{a}</Grid>
         <Grid item>

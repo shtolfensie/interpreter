@@ -382,6 +382,7 @@ const prompt = css`
   line-height: 1.21429em;
   cursor: default;
   min-width: 10ex;
+  user-select: none;
 
 `
 const inputPrompt = css`
