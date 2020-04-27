@@ -391,6 +391,8 @@ const inputArea = css`
   flex-grow: 1;
   tab-size: 4;
   overflow-x: auto !important;
+  background-color: #f7f7f7;
+  border-radius: 2px;
 `
 const outputPrompt = css`
   color: #D84315;
