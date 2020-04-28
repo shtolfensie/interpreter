@@ -192,7 +192,8 @@ const EditorContainer = ({interpreter, firebase}) => {
       [fileId]: currInterpreter.env
     });
     console.log('before', dataSCH);
-    handleCellChange({num: currNumber+1,output: result.output ? result.output : '', result: result.res ? result.res : ''}, cellIndex);
+    if (result.error && result.res === "'") result.res = '';
+    handleCellChange({num: currNumber+1,output: result.output ? result.output : '', result: result.res ? result.res : '', error: result.error ? result.error : ''}, cellIndex);
   }
   const handleChangeFile = id => {
     if (!files.hasOwnProperty(id)) return;

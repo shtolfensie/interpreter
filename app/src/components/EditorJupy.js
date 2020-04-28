@@ -405,6 +405,18 @@ const outputArea = css`
   line-height: 1.21429em;
   font-family: monospace;
 `
+const errorPrompt = css`
+  color: red;
+`
+const errorArea = css`
+  flex-grow: 1;
+  padding: 0.4em;
+  font-size: 14px;
+  line-height: 1.21429em;
+  font-family: monospace;
+  font-weight: bold;
+  color: red;
+`
 //#endregion
 
 const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isEdit, handleActiveCellChange, handleInterpreter, createNewCell}) => {
@@ -437,7 +449,8 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
   }
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
-    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13) return;
+    const bracketMap = {'[':']','{':'}','(':')'};
+    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13 && !Object.keys(bracketMap).includes(e.key)) return;
     console.log('hejo');
     
     // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
@@ -538,7 +551,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
       else handleActiveCellChange(cellIndex, cellIndex+1, true);
     }
 
-    const bracketMap = {'[':']','{':'}','(':')'};
+    // moved bracket array to the top
     if (Object.keys(bracketMap).includes(e.key)) {
       e.preventDefault();
       value = value.slice(0, start) + e.key + value.slice(start, end) + bracketMap[e.key] + value.slice(end);
@@ -610,6 +623,14 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
         </div>
         <div className={outputArea}>
           {result}
+        </div>
+      </div>}
+      {error && <div className={inOutContainer}>
+        <div className={promptContainer}>
+          <div className={cx(prompt, errorPrompt)}>Error[{num}]:</div>
+        </div>
+        <div className={errorArea}>
+          {error}
         </div>
       </div>}
     </div>
