@@ -450,6 +450,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
     const bracketMap = {'[':']','{':'}','(':')'};
+    const bracketMapReverse = {']':'[','}':'{',')':'('};
     if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode === 9 && !Object.keys(bracketMap).includes(e.key)) return;
     console.log('hejo');
     
@@ -558,6 +559,14 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
       start++;
       end++;
     }
+    else if (Object.keys(bracketMapReverse).includes(e.key) && start === end && value[start] === e.key && value[start-1] === bracketMapReverse[e.key]) {
+      e.preventDefault();
+      start++;
+      end++;
+      textArea.current.selectionStart = start
+      textArea.current.selectionEnd = end;
+    }
+
 
     if (value !== input) {
       handleChange({target: { value }});
