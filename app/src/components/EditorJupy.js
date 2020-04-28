@@ -450,7 +450,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
     const bracketMap = {'[':']','{':'}','(':')'};
-    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13 && !Object.keys(bracketMap).includes(e.key)) return;
+    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode === 9 && !Object.keys(bracketMap).includes(e.key)) return;
     console.log('hejo');
     
     // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
