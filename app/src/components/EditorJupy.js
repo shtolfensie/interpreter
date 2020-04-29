@@ -88,6 +88,11 @@ const fileTab = css`min-width: 110px;
 
   }
 `
+const fileTabCloseIcon = css`
+ :hover {
+   color: #ff6666;
+ }
+`
 const selectedFileTab = css`
   /* background-color: rgba(33, 150, 243, 0.71); */
   background-color: #3f51b5;
@@ -145,10 +150,14 @@ const addFileBtn = css`
   height: 100%;
   background-color: #2196f3;
   color: #e0e5ea;
-  border-bottom: 2px #212c63 solid;
+  border-bottom: 2px #376599 solid;
   border-top-left-radius: ${fileSelectorBorderRadius};
   cursor: pointer;
   height: 100%;
+  :hover {
+    background-color: #1a75bd;
+    border-bottom: 2px #75aceb solid;
+  }
 `
 //#endregion
 
@@ -331,7 +340,7 @@ const FileTab = ({fileName, fileId, handleClick, handleCloseClick, isSaved, isSe
     <div>{fileName}</div>
     <div style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
     <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
-      <CloseIcon style={{fontSize: '16px', height: '16px'}}/>
+      <CloseIcon style={{fontSize: '16px', height: '16px'}} className={fileTabCloseIcon}/>
     </div>
   </div>
 );
