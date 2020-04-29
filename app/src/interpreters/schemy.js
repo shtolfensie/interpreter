@@ -407,6 +407,7 @@ class Interpreter {
     this.filaName = fileName;
     this.parser = Parser;
     if (env) globalEnv = env;
+    else globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null }));
     console.log('new inter', globalEnv);
     this.evaluate = evaluate;
     this.error = '';

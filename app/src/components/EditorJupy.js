@@ -163,6 +163,7 @@ const EditorJupy = ({
   handleFileSave,
   handleFileClose,
   handleResetEnv,
+  handleRerunEnv,
   handleClipboard }) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
@@ -287,6 +288,7 @@ const EditorJupy = ({
           handleCreateNewCell={handleCreateNewCell}
           handleInterpreter={handleInterpreter}
           handleResetEnv={handleResetEnv}
+          handleRerunEnv={handleRerunEnv}
           handleClipboard={handleClipboard}
           setShouldSetActive={setShouldSetActive}
           fileData={fileData}
@@ -342,7 +344,7 @@ const toolbarBtnGroup = css`
   height: 100%;
 `
 
-const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleResetEnv, handleClipboard, setShouldSetActive, fileData, activeCell }) => {
+const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleResetEnv, handleRerunEnv, handleClipboard, setShouldSetActive, fileData, activeCell }) => {
 
   const SquareButton = withStyles({
     root: {
@@ -378,7 +380,7 @@ const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleReset
       <ButtonGroup className={toolbarBtnGroup}>
         <SquareButton title='run selected cell' onMouseUp={() => handleInterpreter(fileData.cells[activeCell].input, activeCell)} color={btnThemeColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
         <SquareButton title='reload interpreter (all variables will be lost)' onMouseUp={handleResetEnv} color={btnThemeColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
-        <SquareButton title='reload interpreter and run all cells' color={btnThemeColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='reload interpreter and run all cells' onMouseUp={handleRerunEnv} color={btnThemeColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
     </div>
   )

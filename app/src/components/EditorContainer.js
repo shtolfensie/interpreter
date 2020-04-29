@@ -297,6 +297,35 @@ const EditorContainer = ({interpreter, firebase}) => {
     setEnvs(newEnvs);
   }
 
+  const handleRerunEnv = () => {
+    const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+    const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
+    const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    let currInterpreter = interpreter === 'sch' ? new SchInterpreter(currentFile.fileName, false) : null;
+    const setEnvs = interpreter === 'sch' ? setSchEnvs : setJslEnvs;
+    const newEnvs = { ...envs };
+    delete newEnvs[fileId];
+    let newEnv = false;
+    const currentCells = data[fileId].cells;
+    data[fileId].totalNumber = 0;
+    for (let i = 0; i < currentCells.length; i++) {
+      let result = currInterpreter.interpret(currentCells[i].input)
+      newEnv = currInterpreter.env;
+      data[fileId].cells[i] = {...data[fileId].cells[i],
+        num: data[fileId].totalNumber+1,
+        output: result.output ? result.output : '',
+        result: result.res ? result.res : '',
+        error: result.error ? result.error : ''
+      }
+      data[fileId].totalNumber++;
+      currInterpreter = interpreter === 'sch' ? new SchInterpreter(currentFile.fileName, newEnv) : null;
+    }
+    newEnvs[fileId] = newEnv;
+    setData(data);
+    setEnvs(newEnvs);
+  }
+
   const handleClipboard = (operation, cellIndex) => {
     const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
@@ -340,6 +369,7 @@ const EditorContainer = ({interpreter, firebase}) => {
           handleFileSave={handleFileSave}
           handleFileClose={handleFileClose}
           handleResetEnv={handleResetEnv}
+          handleRerunEnv={handleRerunEnv}
           handleClipboard={handleClipboard}
           handleAddFileBtn={handleCreateNewFile}
           />
