@@ -160,7 +160,7 @@ const EditorContainer = ({interpreter, firebase}) => {
     return setData(newData);
   }
 
-  const createNewCell = (currentCellIndex, newCellIndex) => {
+  const createNewCell = (newCellIndex) => {
     let data = interpreter === 'sch' ? dataSCH : dataJSL;
     console.log(data)
     let currFile = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
@@ -314,6 +314,10 @@ const EditorContainer = ({interpreter, firebase}) => {
     }
     else if (operation === 'paste' && clipboard !== null) {
       data[fileId].cells.splice(cellIndex, 0, clipboard);
+      newData = { ...data };
+    }
+    else if (operation === 'delete' && data[fileId].cells.length > 1)  {
+      data[fileId].cells.splice(cellIndex, 1);
       newData = { ...data };
     }
     if (toClipboard !== null) setClipboard(toClipboard);

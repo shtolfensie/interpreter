@@ -14,6 +14,8 @@ import ReloadAndRunIcon from '@material-ui/icons/FastForward';
 
 import TextareaAutosize from 'react-autosize-textarea';
 
+import KeyboardEventHandler from 'react-keyboard-event-handler';
+
 const TAB = '    ';
 const CutIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="cut" class="svg-inline--fa fa-cut fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M278.06 256L444.48 89.57c4.69-4.69 4.69-12.29 0-16.97-32.8-32.8-85.99-32.8-118.79 0L210.18 188.12l-24.86-24.86c4.31-10.92 6.68-22.81 6.68-35.26 0-53.02-42.98-96-96-96S0 74.98 0 128s42.98 96 96 96c4.54 0 8.99-.32 13.36-.93L142.29 256l-32.93 32.93c-4.37-.61-8.83-.93-13.36-.93-53.02 0-96 42.98-96 96s42.98 96 96 96 96-42.98 96-96c0-12.45-2.37-24.34-6.68-35.26l24.86-24.86L325.69 439.4c32.8 32.8 85.99 32.8 118.79 0 4.69-4.68 4.69-12.28 0-16.97L278.06 256zM96 160c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32zm0 256c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32z"></path></svg>;
 const PasteIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="clipboard" class="svg-inline--fa fa-clipboard fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M384 112v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h80c0-35.29 28.71-64 64-64s64 28.71 64 64h80c26.51 0 48 21.49 48 48zM192 40c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24m96 114v-20a6 6 0 0 0-6-6H102a6 6 0 0 0-6 6v20a6 6 0 0 0 6 6h180a6 6 0 0 0 6-6z"></path></svg>;
@@ -189,12 +191,57 @@ const EditorJupy = ({
     setIsEdit(isEdit);
   }
 
+  const handleKeyDown = (key, e) => {
+    if (!isEdit) {
+      if (e.keyCode === 82 && e.ctrlKey) {
+        if (window.confirm("All unsaved files and all envs will be lost. Do you want to reload?")) return;
+      }
+      e.preventDefault();
+      if (e.keyCode === 38) handleActiveCellChange(activeCell, activeCell-1, false); // up-arrow
+      else if (e.keyCode === 40) handleActiveCellChange(activeCell, activeCell+1, false); // down-arrow
+      else if (e.keyCode === 13 && e.shiftKey) { // interpret cell and move selected cell below or add new if there is no cell below
+        handleInterpreter(fileData.cells[activeCell].input, activeCell);
+        if (fileData.cells.length-1 === activeCell) setShouldCreateNewCell(activeCell+1);
+        else handleActiveCellChange(activeCell, activeCell+1, false);
+      }
+      else if (e.keyCode === 13 && e.ctrlKey) { // interpret cell, don't change selected cell
+        handleInterpreter(fileData.cells[activeCell].input, activeCell);
+      }
+      else if (e.keyCode === 13 && e.altKey) { // interpret cell, add new cell below
+        handleInterpreter(fileData.cells[activeCell].input, activeCell);
+        setShouldCreateNewCell(activeCell+1);
+      }
+      else if (e.keyCode === 13) {
+        setIsEdit(true);
+      }
+      else if (e.keyCode === 83 && e.ctrlKey) handleFileSave();
+      else if (e.keyCode === 67 && e.ctrlKey) handleClipboard('copy', activeCell); // ctrl+c
+      else if (e.keyCode === 86 && e.ctrlKey) handleClipboard('paste', activeCell+1); // ctrl+v
+      else if (e.keyCode === 88 && e.ctrlKey) { // ctrl+x
+        handleClipboard('cut', activeCell);
+        let cellIndex = activeCell;
+        if (cellIndex > fileData.cells.length-1) cellIndex-=1;
+        setShouldSetActive(cellIndex);
+      }
+      else if (e.keyCode === 46)  { // delete
+        handleClipboard('delete', activeCell);
+        let cellIndex = activeCell;
+        if (cellIndex > fileData.cells.length-1 && fileData.cells.length !== 1) cellIndex-=1;
+        setShouldSetActive(cellIndex);
+      }
+      else if (e.keyCode === 65) handleCreateNewCell(activeCell, false); // a
+      else if (e.keyCode === 66) handleCreateNewCell(activeCell+1, false); // b 
+    }
+  }
+
+  const handleKeysArr = ['all'];
+
   const handleTabClick = id => handleChangeFile(id);
 
-  const handleCreateNewCell = (newCellIndex, cellIndex = 0) => {
-    createNewCell(cellIndex, newCellIndex);
+  const handleCreateNewCell = (newCellIndex, edit = true) => {
+    createNewCell(newCellIndex);
     setActiveCell(newCellIndex);
-    setIsEdit(true);
+    setIsEdit(edit);
     setShouldCreateNewCell(false);
   }
 
@@ -209,6 +256,9 @@ const EditorJupy = ({
   })
   return (
     <div className={baseJupy}>
+      <KeyboardEventHandler
+        handleKeys={handleKeysArr}
+        onKeyEvent={handleKeyDown} />
       <div className={topBarContainer}>
         <div className={topBarFilesRow}>
           <div className={addFileBtnContainer}>
@@ -257,6 +307,7 @@ const EditorJupy = ({
             isLast={i === fileData.cells.length-1}
             handleInterpreter={handleInterpreter}
             createNewCell={setShouldCreateNewCell}
+            handleFileSave={handleFileSave}
           />
         ))}
       </div>
@@ -419,39 +470,29 @@ const errorArea = css`
 `
 //#endregion
 
-const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isEdit, handleActiveCellChange, handleInterpreter, createNewCell}) => {
+const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isEdit, handleActiveCellChange, handleInterpreter, createNewCell, handleFileSave}) => {
   const {num, input, output, result, error, ast} = cellData;
   const textArea = useRef();
-  const cellDiv = useRef();
 
   useEffect(() => {    
     if (isActive && isEdit) textArea.current.focus(); // !!! it works now? when you click on the text area, this is why the cursos is not moved to where you clicked
-    else if (isActive && !isEdit) {
-      // textArea.current.blur();
-      cellDiv.current.focus();
-    }
   }, [isActive, isEdit])
   
   const handleChange = e => {
     handleCellInputChange({ input: e.target.value });
   }
-  const handleCellKeyDown = e => {
-    // console.log('cell key');
-    e.preventDefault();
-    if (e.keyCode === 38 && !isEdit) handleActiveCellChange(cellIndex, cellIndex-1, false);
-    if (e.keyCode === 40 && !isEdit) handleActiveCellChange(cellIndex, cellIndex+1, false);
-    if (e.keyCode === 13 && e.shiftKey) {
-      e.preventDefault();
-      handleInterpreter(input, cellIndex);
-      if (isLast) createNewCell(cellIndex+1);
-      else handleActiveCellChange(cellIndex, cellIndex+1, false);
-    }
-  }
+
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
     const bracketMap = {'[':']','{':'}','(':')'};
     const bracketMapReverse = {']':'[','}':'{',')':'('};
-    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode === 9 && !Object.keys(bracketMap).includes(e.key)) return;
+    if (e.keyCode === 82 && e.ctrlKey) {
+      if (!window.confirm("All unsaved files and all envs will be lost. Do you want to reload?")) {
+        e.preventDefault();
+        return;
+      };
+    }
+    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 27 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode === 9 && !Object.keys(bracketMap).includes(e.key)) return;
     console.log('hejo');
     
     // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
@@ -464,7 +505,11 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
     const currentStartRowIndex = getRowNumber(start, 0);
     const currentEndRowIndex = getRowNumber(end, 0);
     if (e.altKey) e.preventDefault();
-    if (e.keyCode === 9) { // handle tab
+    if (e.keyCode === 27) { // esc
+      textArea.current.blur();
+      handleActiveCellChange(cellIndex, cellIndex, false);
+    }
+    else if (e.keyCode === 9) { // handle tab
       console.log('tab', currentStartRowIndex, currentEndRowIndex);
       e.preventDefault();
       let isFirstRowModified = false;
@@ -545,26 +590,55 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
         handleActiveCellChange(cellIndex, cellIndex+1, true);
       }
     }
-    else if (e.keyCode === 13 && e.shiftKey) {
+    else if (e.keyCode === 13 && e.shiftKey) { // ctrl+enter
       e.preventDefault();
       handleInterpreter(input, cellIndex);
       if (isLast) createNewCell(cellIndex+1);
       else handleActiveCellChange(cellIndex, cellIndex+1, true);
     }
+    else if (e.keyCode === 13 && e.ctrlKey) { // interpret cell, don't change selected cell
+      handleInterpreter(input, cellIndex);
+    }
+    else if (e.keyCode === 13 && e.altKey) { // interpret cell, add new cell below
+      handleInterpreter(input, cellIndex);
+      createNewCell(cellIndex+1);
+    }
+    else if (e.keyCode === 83 && e.ctrlKey) { // ctrl+s
+      e.preventDefault();
+      handleFileSave();
+    }
 
     // moved bracket array to the top
-    if (Object.keys(bracketMap).includes(e.key)) {
+    else if (Object.keys(bracketMap).includes(e.key)) { // autobrackets
       e.preventDefault();
       value = value.slice(0, start) + e.key + value.slice(start, end) + bracketMap[e.key] + value.slice(end);
       start++;
       end++;
     }
+    // autobrackets move cursor if closing bracket already exists
     else if (Object.keys(bracketMapReverse).includes(e.key) && start === end && value[start] === e.key && value[start-1] === bracketMapReverse[e.key]) {
       e.preventDefault();
       start++;
       end++;
       textArea.current.selectionStart = start
       textArea.current.selectionEnd = end;
+    }
+
+    else if (e.keyCode === 191 && e.ctrlKey) { // ctrl+/  - comments
+      let toBeCommented = rowArray.slice(currentStartRowIndex, currentEndRowIndex+1);
+      let toUnComment = toBeCommented.reduce((acc, cur) => acc = acc && cur.trim().slice(0,2) === '; ', true)
+      console.log(toBeCommented, toUnComment)
+      for (let i = currentStartRowIndex; i < currentEndRowIndex+1; i++) {
+        if (toUnComment) {
+          let commentIndex = [rowArray[i].indexOf('; '), 2];
+          if (commentIndex[0] === -1) commentIndex = [rowArray[i].indexOf(';'), 1];
+          console.log(commentIndex)
+          rowArray[i] = rowArray[i].slice(0, commentIndex[0]) + rowArray[i].slice(commentIndex[0]+commentIndex[1]);
+        }
+        else rowArray[i] = '; ' + rowArray[i];
+      }
+      start = end;
+      value = rowArray.join('\n');
     }
 
 
@@ -578,8 +652,8 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
     }
   }
 
-  const getRowNumber = (index, row) => {
-    const previousNewline = input.lastIndexOf('\n', index-1);
+  const getRowNumber = (index, row, inputText = input) => {
+    const previousNewline = inputText.lastIndexOf('\n', index-1);
     if (previousNewline < 0) return row;
     if (row > 500) return 500;
     return getRowNumber(previousNewline, row+1);
@@ -593,11 +667,9 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
     if (isEdit && isActive) handleActiveCellChange(cellIndex, cellIndex, false);
   }
   return (
-    <div className={cx(baseCell,{ [activeCell]: isActive}, { [editCell]: (isEdit && isActive)})}
+    <div
+      className={cx(baseCell,{ [activeCell]: isActive}, { [editCell]: (isEdit && isActive)})}
       onMouseDown={handleCellClick}
-      onKeyDown={handleCellKeyDown}
-      tabIndex='0'
-      ref={cellDiv}
     >
       <div className={inOutContainer}>
         <div className={promptContainer}>
