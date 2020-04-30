@@ -512,6 +512,25 @@ const inputHighlighted = css`
   border-radius: 2px;
   pointer-events: none;
   background: rgba(0,0,0,0);
+  .bracket-0 {
+    color: gold;
+  }
+  .bracket-1 {
+    color: orchid;
+  }
+  .bracket-2 {
+    color: lightskyblue;
+  }
+  .bracket-3 {
+    color: white;
+  }
+  .bracket-error {
+    color: darkviolet;
+    border-bottom: 1px solid red;
+  }
+  .bracket-active {
+    outline: 1px red solid;
+  }
 `
 //#endregion
 
@@ -529,19 +548,24 @@ const Cell = ({
   handleFileSave}) => {
   const {num, input, output, result, error, ast} = cellData;
   const textArea = useRef();
+  const [cellHeight, setCellHeight] = useState(32);
+  const [caretPos, setCaretPos] = useState(-1);
 
   useEffect(() => {    
     if (isActive && isEdit) textArea.current.focus(); // !!! it works now? when you click on the text area, this is why the cursos is not moved to where you clicked
     else if (!isEdit) textArea.current.blur();
-    textArea.current.style.caretColor = 'rgba(0,0,0,0)';
-    setTimeout(() => {
-      if (selectionStart !== -1) {
-        textArea.current.selectionStart = selectionStart;
-        textArea.current.selectionEnd = selectionStart;
-      }
-      textArea.current.style.caretColor = 'white';
-    }, 0);
-    console.log(textArea.current.selectionStart, textArea.current.selectionEnd)
+    if (!isActive || !isEdit) setCaretPos(-1);
+    if (textArea.current) {
+      textArea.current.style.caretColor = 'rgba(0,0,0,0)';
+      setTimeout(() => {
+        if (selectionStart !== -1) {
+          textArea.current.selectionStart = selectionStart;
+          textArea.current.selectionEnd = selectionStart;
+        }
+        if (textArea.current) textArea.current.style.caretColor = 'white';
+      }, 0);
+      console.log(textArea.current.selectionStart, textArea.current.selectionEnd)
+    }
   }, [isActive, isEdit]);
   // useEffect(() => {
   //   setCellHeight(textArea.current.offsetHeight)
@@ -549,8 +573,6 @@ const Cell = ({
   useEffect(() => {
     setCellHeight(textArea.current.offsetHeight)
   }, [input])
-
-  const [cellHeight, setCellHeight] = useState(32);
   
   const handleChange = e => {
     handleCellInputChange({ input: e.target.value });
@@ -730,6 +752,14 @@ const Cell = ({
     }
   }
 
+  const handleCellInputKeyUp = e => {
+    console.log(e.target.selectionStart, e.target.selectionEnd)
+    if (e.target.selectionStart === e.target.selectionEnd) {
+      if (caretPos !== e.target.selectionStart) setCaretPos(e.target.selectionStart);
+    }
+    else if (caretPos !== -1) setCaretPos(-1);
+  }
+
   const getRowNumber = (index, row, inputText = input) => {
     const previousNewline = inputText.lastIndexOf('\n', index-1);
     if (previousNewline < 0) return row;
@@ -740,6 +770,10 @@ const Cell = ({
   const handleCellInputClick = e => {
     e.stopPropagation();
     handleActiveCellChange(cellIndex, cellIndex, true);
+  }
+  const handleCellInputMouseUp = e => {
+    if (e.target.selectionStart === e.target.selectionEnd) setCaretPos(e.target.selectionStart);
+    else setCaretPos(-1);
   }
   const handleInputBlur = e => {
     if (isEdit && isActive) handleActiveCellChange(cellIndex, cellIndex, false);
@@ -764,11 +798,13 @@ const Cell = ({
             value={input}
             // onFocus={handleCellClick}
             onMouseDown={handleCellInputClick}
+            onMouseUp={handleCellInputMouseUp}
             onChange={handleChange}
             onKeyDown={handleCellInputKeyDown}
+            onKeyUp={handleCellInputKeyUp}
             onBlur={handleInputBlur}
           />
-          <pre  className={cx(inputHighlighted, 'hljs')} style={{height: cellHeight}}>{highlightInput(input)}</pre>
+          <pre  className={cx(inputHighlighted, 'hljs')} style={{height: cellHeight}}>{highlightInput(input, caretPos)}</pre>
         </div>
       </div>
       {Array.isArray(output) && output.map((out, i) => (
