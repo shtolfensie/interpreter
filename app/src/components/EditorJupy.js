@@ -180,6 +180,7 @@ const EditorJupy = ({
   const [isEdit, setIsEdit] = useState(true)
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
   const [shouldSetActive, setShouldSetActive] = useState(false);
+  const [selectionStart, setSelectionStart] = useState(0);
 
   useEffect(() => {
     if (shouldCreateNewCell !== false) {
@@ -199,6 +200,9 @@ const EditorJupy = ({
   const handleActiveCellChange = (oldCellIndex, newCellIndex, isEdit) => {
     console.log(newCellIndex, isEdit)
     if (newCellIndex < 0 || newCellIndex > fileData.cells.length-1) return;
+    if (oldCellIndex < newCellIndex) setSelectionStart(0);
+    else if (oldCellIndex > newCellIndex) setSelectionStart(fileData.cells[newCellIndex].input.length);
+    else if (oldCellIndex === newCellIndex) setSelectionStart(-1);
     setActiveCell(newCellIndex);
     setIsEdit(isEdit);
   }
@@ -317,6 +321,7 @@ const EditorJupy = ({
             key={i}
             cellIndex={i}
             cellData={cell}
+            selectionStart={selectionStart}
             isLast={i === fileData.cells.length-1}
             handleInterpreter={handleInterpreter}
             createNewCell={setShouldCreateNewCell}
@@ -510,16 +515,37 @@ const inputHighlighted = css`
 `
 //#endregion
 
-const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isEdit, handleActiveCellChange, handleInterpreter, createNewCell, handleFileSave}) => {
+const Cell = ({
+  handleCellInputChange,
+  cellIndex,
+  selectionStart,
+  cellData,
+  isLast,
+  isActive,
+  isEdit,
+  handleActiveCellChange,
+  handleInterpreter,
+  createNewCell,
+  handleFileSave}) => {
   const {num, input, output, result, error, ast} = cellData;
   const textArea = useRef();
 
   useEffect(() => {    
     if (isActive && isEdit) textArea.current.focus(); // !!! it works now? when you click on the text area, this is why the cursos is not moved to where you clicked
+    else if (!isEdit) textArea.current.blur();
+    textArea.current.style.caretColor = 'rgba(0,0,0,0)';
+    setTimeout(() => {
+      if (selectionStart !== -1) {
+        textArea.current.selectionStart = selectionStart;
+        textArea.current.selectionEnd = selectionStart;
+      }
+      textArea.current.style.caretColor = 'white';
+    }, 0);
+    console.log(textArea.current.selectionStart, textArea.current.selectionEnd)
   }, [isActive, isEdit]);
-  useEffect(() => {
-    setCellHeight(textArea.current.offsetHeight)
-  }, [])
+  // useEffect(() => {
+  //   setCellHeight(textArea.current.offsetHeight)
+  // }, [])
   useEffect(() => {
     setCellHeight(textArea.current.offsetHeight)
   }, [input])
@@ -532,6 +558,9 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
   }
 
   const handleCellInputKeyDown = e => {
+    console.log(textArea.current.selectionStart, textArea.current.selectionEnd)
+    console.log(e.target.selectionStart, e.target.selectionEnd)
+    console.log(input.length)
     e.stopPropagation();
     const bracketMap = {'[':']','{':'}','(':')'};
     const bracketMapReverse = {']':'[','}':'{',')':'('};
