@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import './css/App.css';
+import '../node_modules/highlight.js/styles/railscasts.css'
+// import '../node_modules/highlight.js/styles/arta.css'
+// import '../node_modules/highlight.js/styles/tomorrow-night-blue.css'
+// import '../node_modules/highlight.js/styles/monokai.css'
+// import '../node_modules/highlight.js/styles/hybrid.css'
+// import '../node_modules/highlight.js/styles/atom-one-dark-reasonable.css'
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 // import { yellow, lightGreen, pink, teal } from '@material-ui/core/colors'
 

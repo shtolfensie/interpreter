@@ -16,6 +16,8 @@ import TextareaAutosize from 'react-autosize-textarea';
 
 import KeyboardEventHandler from 'react-keyboard-event-handler';
 
+import highlightInput from '../utils/inputCodeHighlight.js';
+
 const TAB = '    ';
 const CutIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="cut" class="svg-inline--fa fa-cut fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M278.06 256L444.48 89.57c4.69-4.69 4.69-12.29 0-16.97-32.8-32.8-85.99-32.8-118.79 0L210.18 188.12l-24.86-24.86c4.31-10.92 6.68-22.81 6.68-35.26 0-53.02-42.98-96-96-96S0 74.98 0 128s42.98 96 96 96c4.54 0 8.99-.32 13.36-.93L142.29 256l-32.93 32.93c-4.37-.61-8.83-.93-13.36-.93-53.02 0-96 42.98-96 96s42.98 96 96 96 96-42.98 96-96c0-12.45-2.37-24.34-6.68-35.26l24.86-24.86L325.69 439.4c32.8 32.8 85.99 32.8 118.79 0 4.69-4.68 4.69-12.28 0-16.97L278.06 256zM96 160c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32zm0 256c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32z"></path></svg>;
 const PasteIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="clipboard" class="svg-inline--fa fa-clipboard fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M384 112v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h80c0-35.29 28.71-64 64-64s64 28.71 64 64h80c26.51 0 48 21.49 48 48zM192 40c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24m96 114v-20a6 6 0 0 0-6-6H102a6 6 0 0 0-6 6v20a6 6 0 0 0 6 6h180a6 6 0 0 0 6-6z"></path></svg>;
@@ -454,8 +456,15 @@ const inputArea = css`
   flex-grow: 1;
   tab-size: 4;
   overflow-x: auto !important;
-  background-color: #f7f7f7;
+  /* background-color: #f7f7f7; */
   border-radius: 2px;
+  width: 100%;
+  color: rgba(0,0,0,0);
+  caret-color: white;
+  font-size: 13.3333px;
+  ::selection {
+    background: rgba(61, 163, 245, 0.6);
+  }
 `
 const outputPrompt = css`
   color: #D84315;
@@ -479,6 +488,26 @@ const errorArea = css`
   font-weight: bold;
   color: red;
 `
+
+const textAreaHighlightContainer = css`
+  position: relative;
+  flex-grow: 1;
+`
+const inputHighlighted = css`
+  line-height: 20px;
+  tab-size: 4;
+  padding: 5px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 13.3333px;
+  font-family: monospace;
+  border: 1px solid rgb(169, 169, 169);
+  border-radius: 2px;
+  pointer-events: none;
+  background: rgba(0,0,0,0);
+`
 //#endregion
 
 const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isEdit, handleActiveCellChange, handleInterpreter, createNewCell, handleFileSave}) => {
@@ -487,10 +516,19 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
 
   useEffect(() => {    
     if (isActive && isEdit) textArea.current.focus(); // !!! it works now? when you click on the text area, this is why the cursos is not moved to where you clicked
-  }, [isActive, isEdit])
+  }, [isActive, isEdit]);
+  useEffect(() => {
+    setCellHeight(textArea.current.offsetHeight)
+  }, [])
+  useEffect(() => {
+    setCellHeight(textArea.current.offsetHeight)
+  }, [input])
+
+  const [cellHeight, setCellHeight] = useState(32);
   
   const handleChange = e => {
     handleCellInputChange({ input: e.target.value });
+    if (cellHeight !== e.target.offsetHeight) setCellHeight(e.target.offsetHeight);
   }
 
   const handleCellInputKeyDown = e => {
@@ -503,7 +541,7 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
         return;
       };
     }
-    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 27 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode === 9 && !Object.keys(bracketMap).includes(e.key)) return;
+    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 27 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode !== 9 && !Object.keys(bracketMap).includes(e.key)) return;
     console.log('hejo');
     
     // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
@@ -686,20 +724,23 @@ const Cell = ({handleCellInputChange, cellIndex, cellData, isLast, isActive, isE
         <div className={promptContainer}>
           <div className={cx(prompt, inputPrompt)}>In [{num}]:</div>
         </div>
-        <TextareaAutosize
-          ref={textArea}
-          selectionStart={0}
-          wrap='off'
-          spellCheck='false'
-          className={inputArea}
-          style={{lineHeight: '20px', resize: 'none', padding: '5px', width: '300px', outline: 'none'}}
-          value={input}
-          // onFocus={handleCellClick}
-          onMouseDown={handleCellInputClick}
-          onChange={handleChange}
-          onKeyDown={handleCellInputKeyDown}
-          onBlur={handleInputBlur}
-        />
+        <div className={textAreaHighlightContainer}>
+          <TextareaAutosize
+            ref={textArea}
+            selectionStart={0}
+            wrap='off'
+            spellCheck='false'
+            className={cx(inputArea, 'hljs')}
+            style={{lineHeight: '20px', resize: 'none', padding: '5px', outline: 'none'}}
+            value={input}
+            // onFocus={handleCellClick}
+            onMouseDown={handleCellInputClick}
+            onChange={handleChange}
+            onKeyDown={handleCellInputKeyDown}
+            onBlur={handleInputBlur}
+          />
+          <pre  className={cx(inputHighlighted, 'hljs')} style={{height: cellHeight}}>{highlightInput(input)}</pre>
+        </div>
       </div>
       {Array.isArray(output) && output.map((out, i) => (
         <div className={inOutContainer} key={i}>
