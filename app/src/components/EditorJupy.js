@@ -87,22 +87,12 @@ const fileTab = css`min-width: 110px;
   :hover {
     background-color: #F1F1F1;
     border-bottom: 2px #485ece solid;
-
   }
 `
 const fileTabCloseIcon = css`
  :hover {
    color: #ff6666;
  }
-`
-const selectedFileTab = css`
-  /* background-color: rgba(33, 150, 243, 0.71); */
-  background-color: #3f51b5;
-  color: #fff;
-  border-bottom: 2px #212c63 solid;
-  :hover {
-    background-color: #314191;
-  }
 `
 //#endregion
 
@@ -150,20 +140,17 @@ const addFileBtn = css`
   /* padding: 6px 7px 5px 4px; */
   padding: 1px 7px 2px 4px;
   height: 100%;
-  background-color: #2196f3;
+  /* background-color: #2196f3; */
   color: #e0e5ea;
-  border-bottom: 2px #376599 solid;
+  /* border-bottom: 2px #376599 solid; */
   border-top-left-radius: ${fileSelectorBorderRadius};
   cursor: pointer;
   height: 100%;
-  :hover {
-    background-color: #1a75bd;
-    border-bottom: 2px #75aceb solid;
-  }
 `
 //#endregion
 
 const EditorJupy = ({
+  interpreter,
   fileData,
   activeFilesArray,
   handleCellChange,
@@ -194,6 +181,31 @@ const EditorJupy = ({
       setShouldSetActive(false);
     }
   }, [fileData, shouldSetActive]);
+
+  const addFileBtnColor = css`
+    background-color: ${interpreter === 'sch' ? '#2196f3' : '#cd5ee0'};
+    border-bottom: 2px ${ interpreter === 'sch' ? '#376599' : '#7e1d8f'} solid;
+    :hover {
+      background-color: '#1a75bd';
+      border-bottom: 2px ${ interpreter === 'sch' ? '#75aceb' : '#ef91ff'} solid;
+  }
+  `
+  const selectedFileTabColor = css`
+    background-color: ${interpreter === 'sch' ? '#3f51b5' : '#9c27b0'};
+    border-bottom: 2px ${interpreter === 'sch' ? '#212c63' : '#61166e'} solid;
+    color: #fff;
+    :hover {
+      background-color: ${interpreter === 'sch' ? '#314191' : '#751b85'};
+    }
+  `
+  const fileTabColor = css`
+    :hover {
+      border-bottom: 2px ${interpreter === 'sch' ? '#485ece' : '#bd49d1'} solid;
+    }
+  `
+  const toolbarBtnColor = css`
+    color: ${interpreter === 'sch' ? '#3f51b5' : '#9c27b0'} !important;
+  `
   const handleCellInputChange = newCellData => {
     handleCellChange(newCellData, activeCell)
   }
@@ -278,7 +290,7 @@ const EditorJupy = ({
       <div className={topBarContainer}>
         <div className={topBarFilesRow}>
           <div className={addFileBtnContainer}>
-            <div className={addFileBtn} onClick={() =>  handleAddFileBtn()} >
+            <div className={cx(addFileBtn, addFileBtnColor)} onClick={() =>  handleAddFileBtn()} >
               <AddIcon style={{marginTop: '6px'}}/>
             </div>
           </div>
@@ -293,6 +305,7 @@ const EditorJupy = ({
                 fileName={file[0]}
                 fileId={file[1]}
                 isSaved={file[2]}
+                cssColors={[selectedFileTabColor, fileTabColor]}
               />
 
             ))}
@@ -308,6 +321,7 @@ const EditorJupy = ({
           setShouldSetActive={setShouldSetActive}
           fileData={fileData}
           activeCell={activeCell}
+          cssColor={toolbarBtnColor}
         />
       </div>
       <div className={cellContainer}>
@@ -334,8 +348,9 @@ const EditorJupy = ({
   )
 }
 
-const FileTab = ({fileName, fileId, handleClick, handleCloseClick, isSaved, isSelected}) => (
-  <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`}
+const FileTab = ({fileName, fileId, handleClick, handleCloseClick, isSaved, isSelected, cssColors}) => (
+  // <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`}
+  <div className={cx(fileTab, cssColors[1], {[cssColors[0]]: isSelected})}
     onMouseDown={e => {
       e.stopPropagation();
       if (e.button === 1) handleCloseClick(fileId);
@@ -360,7 +375,7 @@ const toolbarBtnGroup = css`
   height: 100%;
 `
 
-const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleResetEnv, handleRerunEnv, handleClipboard, setShouldSetActive, fileData, activeCell }) => {
+const Toolbar = ({ saveFile, cssColor, handleCreateNewCell, handleInterpreter, handleResetEnv, handleRerunEnv, handleClipboard, setShouldSetActive, fileData, activeCell }) => {
 
   const SquareButton = withStyles({
     root: {
@@ -370,7 +385,7 @@ const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleReset
   })(Button);
 
   const btnVariant = 'outlined';
-  const btnThemeColor = 'primary';
+  const btnThemeColor = 'default';
 
   const doClipboard = (operation, cellIndex = activeCell) => {
     handleClipboard(operation, cellIndex);
@@ -383,20 +398,20 @@ const Toolbar = ({ saveFile, handleCreateNewCell, handleInterpreter, handleReset
   return (
     <div className={toolbar} onClick={() => alert('click')}>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='save file' onMouseUp={saveFile} color={btnThemeColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='save file' onMouseUp={saveFile} className={cssColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='insert cell bellow' onMouseUp={() => handleCreateNewCell(activeCell+1)} color={btnThemeColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='insert cell bellow' onMouseUp={() => handleCreateNewCell(activeCell+1)} className={cssColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='cut selected cell' onMouseUp={() => doClipboard('cut')} color={btnThemeColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{CutIcon}</SvgIcon></SquareButton>
-        <SquareButton title='copy selected cell' onMouseUp={() => doClipboard('copy')} color={btnThemeColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{PasteIcon}</SvgIcon></SquareButton>
-        <SquareButton title='paste cells below' onMouseUp={() => doClipboard('paste', activeCell+1)} color={btnThemeColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{CopyIcon}</SvgIcon></SquareButton>
+        <SquareButton title='cut selected cell' onMouseUp={() => doClipboard('cut')} className={cssColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{CutIcon}</SvgIcon></SquareButton>
+        <SquareButton title='copy selected cell' onMouseUp={() => doClipboard('copy')} className={cssColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{PasteIcon}</SvgIcon></SquareButton>
+        <SquareButton title='paste cells below' onMouseUp={() => doClipboard('paste', activeCell+1)} className={cssColor} variant={btnVariant} style={{padding: 3}}><SvgIcon style={{fontSize: 16}}>{CopyIcon}</SvgIcon></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
-        <SquareButton title='run selected cell' onMouseUp={() => handleInterpreter(fileData.cells[activeCell].input, activeCell)} color={btnThemeColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
-        <SquareButton title='reload interpreter (all variables will be lost)' onMouseUp={handleResetEnv} color={btnThemeColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
-        <SquareButton title='reload interpreter and run all cells' onMouseUp={handleRerunEnv} color={btnThemeColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='run selected cell' onMouseUp={() => handleInterpreter(fileData.cells[activeCell].input, activeCell)} className={cssColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
+        <SquareButton title='reload interpreter (all variables will be lost)' onMouseUp={handleResetEnv} className={cssColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
+        <SquareButton title='reload interpreter and run all cells' onMouseUp={handleRerunEnv} className={cssColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
     </div>
   )

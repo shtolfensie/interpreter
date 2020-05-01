@@ -44,7 +44,8 @@ const EditorContainer = ({interpreter, firebase}) => {
     };
   }, []) // emty array -> works like comp. did mount
 
-  const [dataSCH, setDataSCH] = useState({[id1]: {
+  const [dataSCH, setDataSCH] = useState({
+    [id1]: {
     fileName: 'untitled1',
     cells: [
       { num: ' ',
@@ -358,6 +359,7 @@ const EditorContainer = ({interpreter, firebase}) => {
       <FileExplorer firebase={firebase} interpreter={interpreter} handleFileSelect={handleFileImport}/>
       <div className={baseContainer}>
         <EditorJupy
+          interpreter={interpreter}
           fileData={interpreter === 'sch'
           ? dataSCH[currentSCHFile]
           : dataJSL[currentJSLFile]}
