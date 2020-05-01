@@ -549,7 +549,8 @@ const inputHighlighted = css`
     border-bottom: 1px solid red;
   }
   .bracket-active {
-    outline: 1px red solid;
+    outline: 1px #e01f49 solid;
+    background-color: rgba(224, 31, 73, 0.3);
   }
   .hljs-number {
     /* color: #C52246; */
