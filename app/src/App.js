@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './css/App.css';
+// import '../node_modules/highlight.js/styles/srcery.css'
 import '../node_modules/highlight.js/styles/railscasts.css'
 // import '../node_modules/highlight.js/styles/arta.css'
 // import '../node_modules/highlight.js/styles/tomorrow-night-blue.css'

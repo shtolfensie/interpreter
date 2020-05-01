@@ -473,6 +473,8 @@ const inputPrompt = css`
   color: #303F9F;
 `
 const inputArea = css`
+  position: relative;
+  z-index: 123;
   flex-grow: 1;
   tab-size: 4;
   overflow-x: auto !important;
@@ -480,6 +482,7 @@ const inputArea = css`
   border-radius: 2px;
   width: 100%;
   color: rgba(0,0,0,0);
+  background-color: rgba(0,0,0,0);
   caret-color: white;
   font-size: 13.3333px;
   ::selection {
@@ -526,12 +529,14 @@ const inputHighlighted = css`
   border: 1px solid rgb(169, 169, 169);
   border-radius: 2px;
   pointer-events: none;
-  background: rgba(0,0,0,0);
+  /* background: rgba(0,0,0,0); */
   .bracket-0 {
     color: gold;
   }
   .bracket-1 {
     color: orchid;
+    /* color: #ffa2fb; */
+    /* color: #a5d6a7; */
   }
   .bracket-2 {
     color: lightskyblue;
@@ -546,6 +551,11 @@ const inputHighlighted = css`
   .bracket-active {
     outline: 1px red solid;
   }
+  .hljs-number {
+    /* color: #C52246; */
+  }
+    background: #3f475c;
+    /* background: #4b587b; */
 `
 //#endregion
 
