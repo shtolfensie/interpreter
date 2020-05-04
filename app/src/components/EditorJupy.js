@@ -393,7 +393,7 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
   }
   return (
     <div className={cx(fileTab, cssColors[1], {[cssColors[0]]: isSelected})}
-      onMouseUp={e => {
+      onMouseDown={e => { // mouseUp doesnt really help with not renaming if doubleclicking on notactive tab
         e.stopPropagation();
         if (e.button === 1) handleCloseClick(fileId);
         else handleClick(fileId);
