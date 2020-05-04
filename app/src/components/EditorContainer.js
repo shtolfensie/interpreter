@@ -31,7 +31,8 @@ const id3 = autoId();
 
 const EditorContainer = ({interpreter, firebase}) => {
 
-  const baseContainer = css`min-height: calc(100vh - 48px - 1rem);
+  const baseContainer = css`
+    height: calc(100vh - 48px - 1rem);
     margin-top: 1rem;
     padding-bottom: 1rem;
   `
@@ -199,6 +200,16 @@ const EditorContainer = ({interpreter, firebase}) => {
   const handleChangeFile = id => {
     if (!files.hasOwnProperty(id)) return;
     interpreter === 'sch' ? setCurrentSCHFile(id) : setCurrentJSLFile(id);
+  }
+
+  const handleFileRename = (newName, id) => {
+    const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    const newData = { ...data };
+    if (typeof newName !== 'string' || newName.length === 0) return true;
+    else if (Object.keys(newData).map(id => newData[id].fileName).includes(newName)) return true;
+    newData[id].fileName = newName;
+    setData(newData);
   }
   
   const handleFileImport = fileId => {
@@ -368,6 +379,7 @@ const EditorContainer = ({interpreter, firebase}) => {
           handleInterpreter={handleInterpreter}
           handleChangeFile={handleChangeFile}
           createNewCell={createNewCell}
+          handleFileRename={handleFileRename}
           handleFileSave={handleFileSave}
           handleFileClose={handleFileClose}
           handleResetEnv={handleResetEnv}

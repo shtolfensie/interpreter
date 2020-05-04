@@ -158,6 +158,7 @@ const EditorJupy = ({
   handleChangeFile,
   createNewCell,
   handleAddFileBtn,
+  handleFileRename,
   handleFileSave,
   handleFileClose,
   handleResetEnv,
@@ -182,6 +183,7 @@ const EditorJupy = ({
     }
   }, [fileData, shouldSetActive]);
 
+  //#region topBar css depending on interpreter
   const addFileBtnColor = css`
     background-color: ${interpreter === 'sch' ? '#2196f3' : '#cd5ee0'};
     border-bottom: 2px ${ interpreter === 'sch' ? '#376599' : '#7e1d8f'} solid;
@@ -206,6 +208,7 @@ const EditorJupy = ({
   const toolbarBtnColor = css`
     color: ${interpreter === 'sch' ? '#3f51b5' : '#9c27b0'} !important;
   `
+  //#endregion
   const handleCellInputChange = newCellData => {
     handleCellChange(newCellData, activeCell)
   }
@@ -302,6 +305,7 @@ const EditorJupy = ({
                 isSelected={i === selectedFileIndex}
                 handleClick={handleTabClick}
                 handleCloseClick={handleFileClose}
+                handleFileRename={handleFileRename}
                 fileName={file[0]}
                 fileId={file[1]}
                 isSaved={file[2]}
@@ -348,24 +352,66 @@ const EditorJupy = ({
   )
 }
 
-const FileTab = ({fileName, fileId, handleClick, handleCloseClick, isSaved, isSelected, cssColors}) => (
-  // <div className={css`${fileTab} ${isSelected ? selectedFileTab : ''}`}
-  <div className={cx(fileTab, cssColors[1], {[cssColors[0]]: isSelected})}
-    onMouseDown={e => {
-      e.stopPropagation();
-      if (e.button === 1) handleCloseClick(fileId);
-      else handleClick(fileId);
-      }
+const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseClick, isSaved, isSelected, cssColors}) => {
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const nameDiv = useRef();
+
+  useEffect(() => {
+    if (nameDiv.current && isRenaming) {
+      let range = document.createRange();
+      let selection = window.getSelection();
+      range.setStart(nameDiv.current.childNodes[0],0);
+      range.setEnd(nameDiv.current.childNodes[0], fileName.length);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      nameDiv.current.focus();
     }
-    onDoubleClick={e => e.stopPropagation()}
-  >
-    <div>{fileName}</div>
-    <div style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
-    <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
-      <CloseIcon style={{fontSize: '16px', height: '16px'}} className={fileTabCloseIcon}/>
+    return () => {
+      if (nameDiv.current) nameDiv.current.blur();
+    };
+  }, [isRenaming]);
+  useEffect(() => {
+    if (!isSelected) setIsRenaming(false);
+  }, [isSelected])
+  const handleKeyDown = e => {
+    console.log(fileName, nameDiv.current.innerHTML)
+    if (e.keyCode === 13 && isRenaming) {
+      e.preventDefault();
+      const didntRename = handleFileRename(nameDiv.current.innerHTML, fileId);
+      if (didntRename) nameDiv.current.innerHTML = fileName;
+      setIsRenaming(false);
+    }
+    else if (e.keyCode === 27 && isRenaming) {
+      e.preventDefault();
+      nameDiv.current.innerHTML = fileName;
+      setIsRenaming(false);
+    } 
+  }
+  const handleBlur = e => {
+    setIsRenaming(false);
+  }
+  return (
+    <div className={cx(fileTab, cssColors[1], {[cssColors[0]]: isSelected})}
+      onMouseUp={e => {
+        e.stopPropagation();
+        if (e.button === 1) handleCloseClick(fileId);
+        else handleClick(fileId);
+        }
+      }
+      onDoubleClick={e => {
+        if (isSelected) setIsRenaming(true);
+        e.stopPropagation();
+      }}
+    >
+      <div contentEditable={isRenaming} ref={nameDiv} onKeyDown={handleKeyDown} onBlur={handleBlur} style={{minWidth: '60px', marginRight: '3px'}}>{fileName}</div>
+      <div style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
+      <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
+        <CloseIcon style={{fontSize: '16px', height: '16px'}} className={fileTabCloseIcon}/>
+      </div>
     </div>
-  </div>
-);
+  )
+};
 
 const toolbarIcon = css`
   font-size: 22px !important;
