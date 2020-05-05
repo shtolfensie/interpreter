@@ -417,7 +417,7 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
       }}
     >
       <div contentEditable={isRenaming} ref={nameDiv} onKeyDown={handleKeyDown} onBlur={handleBlur} style={{minWidth: '60px', marginRight: '3px'}}>{fileName}</div>
-      <div style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
+      <div title={!isSaved && 'file not saved'} style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
       <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
         <CloseIcon style={{fontSize: '16px', height: '16px'}} className={fileTabCloseIcon}/>
       </div>
