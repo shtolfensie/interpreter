@@ -10,6 +10,7 @@ import RunIcon from '@material-ui/icons/SkipNext';
 import StopIcon from '@material-ui/icons/Stop';
 import ReloadIcon from '@material-ui/icons/Replay';
 import ReloadAndRunIcon from '@material-ui/icons/FastForward';
+import EditIcon from '@material-ui/icons/Edit';
 // import CopyIcon from '@material-ui/icons/FileCopy';
 
 import TextareaAutosize from 'react-autosize-textarea';
@@ -169,6 +170,7 @@ const EditorJupy = ({
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
   const [shouldSetActive, setShouldSetActive] = useState(false);
   const [selectionStart, setSelectionStart] = useState(0);
+  const [shouldBeRenaming, setShouldBeRenaming] = useState(false)
 
   useEffect(() => {
     if (shouldCreateNewCell !== false) {
@@ -182,6 +184,10 @@ const EditorJupy = ({
       setShouldSetActive(false);
     }
   }, [fileData, shouldSetActive]);
+
+  useEffect(() => {
+    if (shouldBeRenaming) setShouldBeRenaming(false);
+  }, [shouldBeRenaming])
 
   //#region topBar css depending on interpreter
   const addFileBtnColor = css`
@@ -309,6 +315,7 @@ const EditorJupy = ({
                 fileName={file[0]}
                 fileId={file[1]}
                 isSaved={file[2]}
+                startRenaming={shouldBeRenaming}
                 cssColors={[selectedFileTabColor, fileTabColor]}
               />
 
@@ -323,6 +330,7 @@ const EditorJupy = ({
           handleRerunEnv={handleRerunEnv}
           handleClipboard={handleClipboard}
           setShouldSetActive={setShouldSetActive}
+          setShouldBeRenaming={setShouldBeRenaming}
           fileData={fileData}
           activeCell={activeCell}
           cssColor={toolbarBtnColor}
@@ -352,10 +360,14 @@ const EditorJupy = ({
   )
 }
 
-const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseClick, isSaved, isSelected, cssColors}) => {
+const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseClick, isSaved, isSelected, cssColors, startRenaming}) => {
 
   const [isRenaming, setIsRenaming] = useState(false);
   const nameDiv = useRef();
+
+  useEffect(() => {
+    if (startRenaming && isSelected) setIsRenaming(true);
+  }, [startRenaming])
 
   useEffect(() => {
     if (nameDiv.current && isRenaming) {
@@ -421,7 +433,18 @@ const toolbarBtnGroup = css`
   height: 100%;
 `
 
-const Toolbar = ({ saveFile, cssColor, handleCreateNewCell, handleInterpreter, handleResetEnv, handleRerunEnv, handleClipboard, setShouldSetActive, fileData, activeCell }) => {
+const Toolbar = ({
+  saveFile,
+  cssColor,
+  handleCreateNewCell,
+  handleInterpreter,
+  handleResetEnv,
+  handleRerunEnv,
+  handleClipboard,
+  setShouldSetActive,
+  setShouldBeRenaming,
+  fileData,
+  activeCell }) => {
 
   const SquareButton = withStyles({
     root: {
@@ -445,6 +468,9 @@ const Toolbar = ({ saveFile, cssColor, handleCreateNewCell, handleInterpreter, h
     <div className={toolbar} onClick={() => alert('click')}>
       <ButtonGroup className={toolbarBtnGroup}>
         <SquareButton title='save file' onMouseUp={saveFile} className={cssColor} variant={btnVariant}><SaveIcon className={toolbarIcon} /></SquareButton>
+      </ButtonGroup>
+      <ButtonGroup className={toolbarBtnGroup}>
+        <SquareButton title='rename file' onMouseUp={() => setShouldBeRenaming(true)} className={cssColor} variant={btnVariant}><EditIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
       <ButtonGroup className={toolbarBtnGroup}>
         <SquareButton title='insert cell bellow' onMouseUp={() => handleCreateNewCell(activeCell+1)} className={cssColor} variant={btnVariant}><AddIcon className={toolbarIcon} /></SquareButton>

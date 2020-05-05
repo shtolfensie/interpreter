@@ -209,6 +209,7 @@ const EditorContainer = ({interpreter, firebase}) => {
     if (typeof newName !== 'string' || newName.length === 0) return true;
     else if (Object.keys(newData).map(id => newData[id].fileName).includes(newName)) return true;
     newData[id].fileName = newName;
+    newData[id].isSaved = false;
     setData(newData);
   }
   
@@ -304,9 +305,13 @@ const EditorContainer = ({interpreter, firebase}) => {
     const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
     const setEnvs = interpreter === 'sch' ? setSchEnvs : setJslEnvs;
+    const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
     const newEnvs = { ...envs };
     newEnvs[fileId] = schinter1.emptyEvn;
+    data[fileId].isSaved = false;
     setEnvs(newEnvs);
+    setData(data);
   }
 
   const handleRerunEnv = () => {
@@ -320,6 +325,7 @@ const EditorContainer = ({interpreter, firebase}) => {
     delete newEnvs[fileId];
     let newEnv = false;
     const currentCells = data[fileId].cells;
+    data[fileId].isSaved = false;
     data[fileId].totalNumber = 0;
     for (let i = 0; i < currentCells.length; i++) {
       let result = currInterpreter.interpret(currentCells[i].input)
@@ -362,7 +368,10 @@ const EditorContainer = ({interpreter, firebase}) => {
       newData = { ...data };
     }
     if (toClipboard !== null) setClipboard(toClipboard);
-    if (newData !== null) setData(newData);
+    if (newData !== null) {
+      newData[fileId].isSaved = false;
+      setData(newData);
+    }
   }
 
   return (
