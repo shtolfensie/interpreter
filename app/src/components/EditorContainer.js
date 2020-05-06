@@ -34,7 +34,7 @@ const EditorContainer = ({interpreter, firebase}) => {
   const baseContainer = css`
     height: calc(100vh - 48px - 1rem);
     margin-top: 1rem;
-    padding-bottom: 1rem;
+    /* padding-bottom: 1rem; */
   `
   const [authUser, setAuthUser] = useState(false);
   useEffect(() => {

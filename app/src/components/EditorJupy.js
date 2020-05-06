@@ -26,10 +26,13 @@ const CopyIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" dat
 
 //#region base css
 const baseJupy = css`
-  width: 70%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   /* border: 1px solid black; */
   /* border-radius: 4px; */
-  margin: 0 auto;
+  /* margin: 0 auto; */
   /* box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12); */
 `
 //#endregion
@@ -102,19 +105,57 @@ const toolbar = css`
   display: flex;
   align-items: center;
 `
-
+const ccBottomMargin = 100;
 const cellContainer = css`
-  width: 100%;
-  box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+  width: 70%;
+  margin: 0 auto ${ccBottomMargin}px auto;
+  /* box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12); */
   padding: 1rem 0;
+`
+const cellScrollContainer = css`
+  height: 100%;
+  position: relative;
+  overflow: overlay;
+  ::-webkit-scrollbar-track {
+    display: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    // background-color: #F5F5F5;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(58, 62, 74, 0.55);
+  }
+`
+const cellScrollMainContainer = css`
+  height: 100%;
+  width: 100%;
+  flex-grow: 1;
+  position: relative;
+  padding-top: 10px;
+  overflow: hidden;
+`
+const cellScrollShadow = css`
+  position: absolute;
+  /* height: 50px; */
+  width: 70%;
+  top: 10px;
+  left: 15%;
+  /* box-shadow: 0px -2px 8px -3px rgba(145,145,145,1); */
+  /* box-shadow: 0px -7px 11px -11px rgba(0,0,0,0.75); */
+  box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
 `
 //#region topBarContainer css
 const topBarContainer = css`
-  width: 100%;
+  width: 70%;
+  margin: 0 auto;
   /* box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12); */
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
   border: 1px solid rgba(0, 0, 0, 0.12);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   border-top-right-radius: ${fileSelectorBorderRadius};
   border-top-left-radius: ${fileSelectorBorderRadius};
   -webkit-touch-callout: none;
@@ -170,7 +211,12 @@ const EditorJupy = ({
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
   const [shouldSetActive, setShouldSetActive] = useState(false);
   const [selectionStart, setSelectionStart] = useState(0);
-  const [shouldBeRenaming, setShouldBeRenaming] = useState(false)
+  const [shouldBeRenaming, setShouldBeRenaming] = useState(false);
+  const [shadowHeight, setShadowHeight] = useState(0);
+
+  useEffect(() => {
+    handleShadowHeightChange();
+  });
 
   useEffect(() => {
     if (shouldCreateNewCell !== false) {
@@ -187,7 +233,16 @@ const EditorJupy = ({
 
   useEffect(() => {
     if (shouldBeRenaming) setShouldBeRenaming(false);
-  }, [shouldBeRenaming])
+  }, [shouldBeRenaming]);
+
+  useEffect(() => {
+    const acEl = document.querySelector('#ac');
+    const cont = document.querySelector('#cont');
+    if (acEl.getBoundingClientRect().bottom > window.innerHeight - (ccBottomMargin+16)) cont.scrollBy(0, acEl.getBoundingClientRect().bottom - (window.innerHeight - (ccBottomMargin+16)));
+    else if (acEl.getBoundingClientRect().top < cont.getBoundingClientRect().top + 16) cont.scrollBy(0, -1*(cont.getBoundingClientRect().top - acEl.getBoundingClientRect().top + 16) )
+    // if (acEl.getBoundingClientRect().bottom > 900) cont.scroll({letf:  0, top: 900 + acEl.getBoundingClientRect().height, behavior: 'smooth'})
+    // else if (acEl.getBoundingClientRect().top < cont.getBoundingClientRect().top) cont.scroll({letf: 0, top: -1 * (cont.getBoundingClientRect().top + 16 + acEl.getBoundingClientRect().height), behavior: 'smooth'})
+  }, [activeCell])
 
   //#region topBar css depending on interpreter
   const addFileBtnColor = css`
@@ -282,6 +337,13 @@ const EditorJupy = ({
     setShouldCreateNewCell(false);
   }
 
+  const handleShadowHeightChange = () => {
+    const el = document.querySelector('#cc');
+    const cont = document.querySelector('#cont')
+    const newHeight = el.getBoundingClientRect().bottom - cont.getBoundingClientRect().top;
+    if (newHeight !== shadowHeight) setShadowHeight(newHeight);
+  }
+
 
   // fileNameArray = ["untitled1", "a;sdkfjf;d", "fsadfasdfasdfsadf", "fsadfasdf","fsadfasdf","fsadfasdf", "fsadfasdfasdfsadf",];
   // let selectedFileIndex = fileNameArray.indexOf(fileData.fileName);
@@ -336,27 +398,60 @@ const EditorJupy = ({
           cssColor={toolbarBtnColor}
         />
       </div>
-      <div className={cellContainer}>
-        {fileData.cells.map((cell, i) => (
-          <Cell 
-            handleCellInputChange={handleCellInputChange}
-            setActive={setActiveCell}
-            isActive={i === activeCell}
-            isEdit={isEdit}
-            handleActiveCellChange={handleActiveCellChange}
-            key={i}
-            cellIndex={i}
-            cellData={cell}
-            selectionStart={selectionStart}
-            isLast={i === fileData.cells.length-1}
-            handleInterpreter={handleInterpreter}
-            createNewCell={setShouldCreateNewCell}
-            handleFileSave={handleFileSave}
-          />
-        ))}
+      <div className={cellScrollMainContainer}>
+        <ScrollShadow height={shadowHeight}/>
+        <div className={cellScrollContainer} id='cont'>
+          <div className={cellContainer} id='cc'>
+            {fileData.cells.map((cell, i) => (
+              <Cell 
+                handleCellInputChange={handleCellInputChange}
+                setActive={setActiveCell}
+                isActive={i === activeCell}
+                isEdit={isEdit}
+                handleActiveCellChange={handleActiveCellChange}
+                key={i}
+                cellIndex={i}
+                cellData={cell}
+                selectionStart={selectionStart}
+                isLast={i === fileData.cells.length-1}
+                handleInterpreter={handleInterpreter}
+                createNewCell={setShouldCreateNewCell}
+                handleFileSave={handleFileSave}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
     </div>
+  )
+}
+
+const ScrollShadow = ({height}) => {
+
+  const [shadowHeight, setShadowHeight] = useState(0);
+  useEffect(() => {
+    console.log(height)
+    if (height !== shadowHeight) setShadowHeight(height);
+  }, [height]);
+  useEffect(() => {
+    document.querySelector('#cont').addEventListener('scroll', handleScroll);
+    return () => {
+      document.querySelector('#cont').removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
+  const handleScroll = () => {
+    const el = document.querySelector('#cc');
+    const cont = document.querySelector('#cont')
+    const newHeight = el.getBoundingClientRect().bottom - cont.getBoundingClientRect().top;
+    if ((newHeight !== shadowHeight) && (cont.offsetHeight > shadowHeight || newHeight < shadowHeight)) {
+      setShadowHeight(newHeight);
+    }
+  }
+
+  return (
+    <div className={cellScrollShadow} style={{height: `${shadowHeight}px`}}></div>
   )
 }
 
@@ -418,7 +513,11 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
     >
       <div contentEditable={isRenaming} ref={nameDiv} onKeyDown={handleKeyDown} onBlur={handleBlur} style={{minWidth: '60px', marginRight: '3px'}}>{fileName}</div>
       <div title={!isSaved && 'file not saved'} style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
-      <div onClick={() => handleCloseClick(fileId)} style={{height: '16px', width: '16px'}}>
+      <div onMouseUp={(e) => {
+        e.stopPropagation();
+        handleCloseClick(fileId)}} style={{height: '16px', width: '16px'}}
+        onMouseDown={e => e.stopPropagation()} // this prevents the selection of the tab by blocking the main onMouseDown e, just before the tab closes
+      >
         <CloseIcon style={{fontSize: '16px', height: '16px'}} className={fileTabCloseIcon}/>
       </div>
     </div>
@@ -678,9 +777,6 @@ const Cell = ({
   }
 
   const handleCellInputKeyDown = e => {
-    console.log(textArea.current.selectionStart, textArea.current.selectionEnd)
-    console.log(e.target.selectionStart, e.target.selectionEnd)
-    console.log(input.length)
     e.stopPropagation();
     const bracketMap = {'[':']','{':'}','(':')'};
     const bracketMapReverse = {']':'[','}':'{',')':'('};
@@ -690,7 +786,14 @@ const Cell = ({
         return;
       };
     }
-    if (e.location === 0 && e.keyCode !== 38 && e.keyCode !== 27 && e.keyCode !== 40 && e.keyCode !== 13 && e.keyCode !== 9 && !Object.keys(bracketMap).includes(e.key)) return;
+    if (e.location === 0
+      && e.keyCode !== 38
+      && e.keyCode !== 27
+      && e.keyCode !== 40
+      && e.keyCode !== 13
+      && e.keyCode !== 9
+      && !Object.keys(bracketMap).includes(e.key) 
+      && !Object.keys(bracketMapReverse).includes(e.key)) return;
     console.log('hejo');
     
     // if (e.key === 'x') {e.preventDefault(); console.log(e.target.selectionStart, e.target.selectionEnd, e.persist(), e);}
@@ -880,6 +983,7 @@ const Cell = ({
     <div
       className={cx(baseCell,{ [activeCell]: isActive}, { [editCell]: (isEdit && isActive)})}
       onMouseDown={handleCellClick}
+      id={isActive && 'ac'}
     >
       <div className={inOutContainer}>
         <div className={promptContainer}>
