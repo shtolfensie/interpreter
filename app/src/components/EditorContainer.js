@@ -206,7 +206,9 @@ const EditorContainer = ({interpreter, firebase}) => {
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
     const newData = { ...data };
+    newName = newName.replace(/^&nbsp;|&nbsp;$/g, '');
     if (typeof newName !== 'string' || newName.length === 0) return true;
+    else if (/[ ]/.test(newName)) return true;
     else if (Object.keys(newData).map(id => newData[id].fileName).includes(newName)) return true;
     newData[id].fileName = newName;
     newData[id].isSaved = false;

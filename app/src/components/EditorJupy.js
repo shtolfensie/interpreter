@@ -18,6 +18,7 @@ import TextareaAutosize from 'react-autosize-textarea';
 import KeyboardEventHandler from 'react-keyboard-event-handler';
 
 import highlightInput from '../utils/inputCodeHighlight.js';
+import autoId from '../utils/autoId.js';
 
 const TAB = '    ';
 const CutIcon = <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="cut" class="svg-inline--fa fa-cut fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M278.06 256L444.48 89.57c4.69-4.69 4.69-12.29 0-16.97-32.8-32.8-85.99-32.8-118.79 0L210.18 188.12l-24.86-24.86c4.31-10.92 6.68-22.81 6.68-35.26 0-53.02-42.98-96-96-96S0 74.98 0 128s42.98 96 96 96c4.54 0 8.99-.32 13.36-.93L142.29 256l-32.93 32.93c-4.37-.61-8.83-.93-13.36-.93-53.02 0-96 42.98-96 96s42.98 96 96 96 96-42.98 96-96c0-12.45-2.37-24.34-6.68-35.26l24.86-24.86L325.69 439.4c32.8 32.8 85.99 32.8 118.79 0 4.69-4.68 4.69-12.28 0-16.97L278.06 256zM96 160c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32zm0 256c-17.64 0-32-14.36-32-32s14.36-32 32-32 32 14.36 32 32-14.36 32-32 32z"></path></svg>;
@@ -72,10 +73,10 @@ const fileSelector = css`
   }
 `
 const fileTab = css`min-width: 110px;
-  max-width: 220px;
+  max-width: 240px;
   height: 100%;
-  padding-left: 10px;
-  padding-right: 14px;
+  padding-left: 7px;
+  padding-right: 11px;
   text-overflow: ellipsis;
   overflow: hidden;
   display: inline-block;
@@ -92,6 +93,24 @@ const fileTab = css`min-width: 110px;
     background-color: #F1F1F1;
     border-bottom: 2px #485ece solid;
   }
+`
+const fileTabCE = css`
+  min-width: 60px;
+  margin-right: 3px;
+  padding: 0 4px;
+  outline-color: #2196F3;
+  white-space: nowrap;  
+  overflow: inherit;
+  text-overflow: unset; 
+`
+const fileTabNameHolder = css`
+  min-width: 60px;
+  max-width: 200px;
+  margin-right: 3px;
+  padding: 0 4px;
+  white-space: nowrap;  
+  overflow: hidden;
+  text-overflow: ellipsis; 
 `
 const fileTabCloseIcon = css`
  :hover {
@@ -474,12 +493,20 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
       selection.addRange(range);
       nameDiv.current.focus();
     }
+    else if (!isRenaming) {
+      let selection = window.getSelection();
+      selection.removeAllRanges();
+    }
     return () => {
       if (nameDiv.current) nameDiv.current.blur();
     };
   }, [isRenaming]);
   useEffect(() => {
-    if (!isSelected) setIsRenaming(false);
+    if (!isSelected && isRenaming) {
+      const didntRename = handleFileRename(nameDiv.current.innerHTML, fileId);
+      if (didntRename) nameDiv.current.innerHTML = fileName;
+      setIsRenaming(false);
+    }
   }, [isSelected])
   const handleKeyDown = e => {
     console.log(fileName, nameDiv.current.innerHTML)
@@ -493,9 +520,12 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
       e.preventDefault();
       nameDiv.current.innerHTML = fileName;
       setIsRenaming(false);
-    } 
+    }
+    else if (e.keyCode === 9 && isRenaming) e.preventDefault();
   }
   const handleBlur = e => {
+    const didntRename = handleFileRename(nameDiv.current.innerHTML, fileId);
+    if (didntRename) nameDiv.current.innerHTML = fileName;
     setIsRenaming(false);
   }
   return (
@@ -511,7 +541,8 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
         e.stopPropagation();
       }}
     >
-      <div contentEditable={isRenaming} ref={nameDiv} onKeyDown={handleKeyDown} onBlur={handleBlur} style={{minWidth: '60px', marginRight: '3px'}}>{fileName}</div>
+      {isRenaming && <div contentEditable={isRenaming} ref={nameDiv} onKeyDown={handleKeyDown} onBlur={handleBlur} className={fileTabCE}>{fileName}</div>}
+      <div style={!isRenaming ? {display: 'block'} : {display: 'none'}} className={fileTabNameHolder}>{fileName}</div>
       <div title={!isSaved && 'file not saved'} style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
       <div onMouseUp={(e) => {
         e.stopPropagation();
