@@ -14,7 +14,7 @@ const bracketColorizer = (hCode, code, caretPos) => {
   const bracketMap = {']':'[', ')':'(', '}':'{'};
   let resultArr = [ ...hCode.matchAll(bracketRegex)];
   let resultCleanArr = [ ...code.matchAll(bracketRegex)];
-  console.log(resultCleanArr, resultArr)
+  // console.log(resultCleanArr, resultArr)
   hCode = hCode.split('');
   for (let i = 0; i < resultArr.length; i++) {
     if (openRegex.test(resultArr[i][0])) {
@@ -26,7 +26,7 @@ const bracketColorizer = (hCode, code, caretPos) => {
     }
     else if (closeRegex.test(resultArr[i][0])) {
       let openingBracket = stackArr.pop();
-      if (bracketMap[resultArr[i][0]] === openingBracket[0]) {
+      if (openingBracket && (bracketMap[resultArr[i][0]] === openingBracket[0])) {
         level--;
         if (level < 0) level = maxLevel;
         hCode.splice(resultArr[i].index, 1, `<span class='bracket-${level}'>${resultArr[i][0]}</span>`);
@@ -38,7 +38,7 @@ const bracketColorizer = (hCode, code, caretPos) => {
       }
     }
   }
-  console.log(pairRangeArr);
+  // console.log(pairRangeArr);
   if (caretPos > 0) {
     for (let i = 0; i < pairRangeArr.length; i++) {
       if (pairRangeArr[i][0][0] < caretPos && caretPos < pairRangeArr[i][0][1]+1) {
