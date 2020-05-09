@@ -3,6 +3,19 @@ import scheme from 'highlight.js/lib/languages/scheme';
 
 import parse from 'html-react-parser';
 
+const shouldSkip = (hCode, i) => {
+  let offset = 0;
+  for (let j = 0; j < i; j++) {
+    if (hCode[j].length > 1) offset += hCode[j].length -1;
+  }
+  i += offset;
+  hCode = hCode.join('');
+  const enclosingStringSpan = hCode.lastIndexOf("<span class=\"hljs-string\">", i);
+  const enclosingCommentSpan = hCode.lastIndexOf("<span class=\"hljs-comment\">", i);
+  const closingSpan = hCode.lastIndexOf("</span>", i);
+  return enclosingStringSpan > closingSpan | enclosingCommentSpan > closingSpan;
+}
+
 const bracketColorizer = (hCode, code, caretPos) => {
   let stackArr = [];
   let pairRangeArr = [];
@@ -17,14 +30,14 @@ const bracketColorizer = (hCode, code, caretPos) => {
   // console.log(resultCleanArr, resultArr)
   hCode = hCode.split('');
   for (let i = 0; i < resultArr.length; i++) {
-    if (openRegex.test(resultArr[i][0])) {
+    if (openRegex.test(resultArr[i][0]) && !shouldSkip(hCode, resultArr[i].index)) {
       resultArr[i].arrayIndex = i;
       stackArr.push(resultArr[i]);
       hCode.splice(resultArr[i].index, 1, `<span class='bracket-${level}'>${resultArr[i][0]}</span>`)
       level++;
       if (level > maxLevel) level = 0;
     }
-    else if (closeRegex.test(resultArr[i][0])) {
+    else if (closeRegex.test(resultArr[i][0]) && !shouldSkip(hCode, resultArr[i].index)) {
       let openingBracket = stackArr.pop();
       if (openingBracket && (bracketMap[resultArr[i][0]] === openingBracket[0])) {
         level--;
