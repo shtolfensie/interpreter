@@ -1056,7 +1056,7 @@ const Cell = ({
           {result}
         </div>
       </div>}
-      {error && <div className={inOutContainer}>
+      {(error && typeof error === 'string') && <div className={inOutContainer}>
         <div className={promptContainer}>
           <div className={cx(prompt, errorPrompt)}>Error[{num}]:</div>
         </div>
