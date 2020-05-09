@@ -2,13 +2,14 @@
 
 const QUOTE = "quote",
       QUASI_QUOTE = "quasiquote",
-      UNQUOTE = "unquote";
+      UNQUOTE = "unquote",
+      UNQUOTE_SPLICING = "unquote-splicing";
 
 const error = (msg = "Syntax error") => {
   throw msg;
 };
 
-const quoteList = { "'": QUOTE, "`": QUASI_QUOTE, ",": UNQUOTE };
+const quoteList = { "'": QUOTE, "`": QUASI_QUOTE, ",": UNQUOTE, ",@": UNQUOTE_SPLICING };
 
 const Parser = program => {
   let lines = program.split("\n");
@@ -28,12 +29,13 @@ const Parser = program => {
     }
     else if (token === ")" || token === "]") error("Unexpected end of s-expression");
     else if (quoteList.hasOwnProperty(token)) return [ quoteList[token], parse(get_next_token()) ];
+    else if (token === "EOFCOMMENT") return;
     else if (token === "EOF") error("Unexpected end of file");
     else return atom(token);
   };
 
   const get_next_token = () => {
-    const tokenizerRegEx = /\s*(,@|[(\['`,\])]|"(?:[\\].|[^\\"])*"|;.*|[^\s(\['"`,;\])]*)(.*)/;
+    const tokenizerRegEx = /\s*((?:#\\.)|,@|[(\['`,\])]|"(?:[\\].|[^\\"])*"|;.*|[^\s(\['"`,;\])]*)(.*)/;
     let token;
 
     while (true) {
@@ -42,6 +44,7 @@ const Parser = program => {
       [ , token, lines[line] ] = tokenizerRegEx.exec(lines[line]);
       if (token === "") error(`Syntax error: ${lines[line]}`);
       if (token[0] !== ";") return token; // used to be token !== "" && token[0] !== ";"
+      else if (token[0] === ";" && line+1 > lines.length-1) return "EOFCOMMENT";
     }
   };
 
@@ -109,10 +112,11 @@ const createGlobals = env => {
   jsMathFunctions.forEach(fun => (env[fun] = Math[fun]));
 
   // add all basic math functions, that are not in the Math object and other basic functions
-  env["+"] = (a, ...rest) => rest.reduce((res, b) => (res += b), a);
+  env["+"] = (a, ...rest) => rest.reduce((res, b) => (res += b), parseInt(a ? a : 0 +0)); // parseInt and the cond inside is to handle an empty arr or no args at all - eg. (apply + '())
   env["-"] = (a, ...rest) => rest.reduce((res, b) => (res -= b), rest.length ? a : -a);
   env["*"] = (a, ...rest) => rest.reduce((res, b) => (res *= b), a);
   env["/"] = (a, ...rest) => rest.reduce((res, b) => (res /= b), rest.length ? a : 1 / a);
+  env["modulo"] = (a, b) => a % b; 
   env[">"] = (a, b) => a > b;
   env["<"] = (a, b) => a < b;
   env[">="] = (a, b) => a >= b;
@@ -127,7 +131,7 @@ const createGlobals = env => {
   env["cdr"] = list => list.slice(1);
   env["cadr"] = list => env["car"](env["cdr"](list)); // could also be just list.slice(1,2);
   env["list"] = (...list) => list;
-  env["cons"] = (n, list) => [ n, ...list ];
+  env["cons"] = (n, list) => [ n,  ...(Array.isArray(list) ? list : [list])]; // to keep to MIT implementation - the last element doesnt need to be a list
   env["append"] = (...lists) => lists.reduce((res, l) => [...res, ...l]);
   env["length"] = list => list.length;
   env["null?"] = list => Array.isArray(list) && list.length === 0;
@@ -138,6 +142,8 @@ const createGlobals = env => {
   env["display"] = a => setOutput(toSchemeDisplayString(a));
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
+    // to prevent an error when trying to ...spread a variable that is not an array. To enforce the syntax - last arg must be a list
+    if (!Array.isArray(list)) error(`Syntax Error: at procedure: apply, expected: list, given: ${toSchemeDisplayString(list)} `)
     args = [ ...args, ...list ];
     return callable.apply(null, args);
   };
@@ -287,8 +293,15 @@ const evalQuasiQuote = (ast, env, lvl = 0) => {
   else if (ast[0] === QUASI_QUOTE) return [ ast[0], ...Array.from(evalQuasiQuote(ast.slice(1), env, ++lvl)) ];
   if (ast[0] === UNQUOTE && lvl === 1) return evaluate(ast[1], env);
   else if (ast[0] === UNQUOTE) return [ ast[0], ...Array.from(evalQuasiQuote(ast.slice(1), env, --lvl)) ];
-  if (Array.isArray(ast))
+  if (ast[0] === UNQUOTE_SPLICING && lvl > 1) return [ ast[0], ...Array.from(evalQuasiQuote(ast.slice(1), env, --lvl)) ];
+  if (Array.isArray(ast)) {
+    if (ast[0][0] === UNQUOTE_SPLICING && lvl === 1) {
+      const resultList = evaluate(ast[0].slice(1)[0], env);
+      if (!Array.isArray(resultList) || resultList.length === 0) error(`Splicing Error: at: ${toSchemeDisplayString(ast[0])}, expected a list, given: ${resultList}`);
+      return [ ...resultList, ...Array.from(evalQuasiQuote(ast.slice(1), env, lvl)) ];
+    }
     return [ evalQuasiQuote(ast[0], env, lvl), ...Array.from(evalQuasiQuote(ast.slice(1), env, lvl)) ];
+  }
 };
 
 const toSchemeDisplayString = (ast, lvl = false) => {
@@ -435,7 +448,7 @@ class Interpreter {
       this.error = err;
     }
   
-    return {res: toSchemeDisplayString(this.res, true), output, error: this.error}
+    return {res: toSchemeDisplayString(this.res, true), output, error: this.error, ast: this.ast}
   }
 }
 
