@@ -29,7 +29,7 @@ const id1 = '5ZNt1S2nrWKqDBtpvAaI';
 const id2 = autoId();
 const id3 = autoId();
 
-const EditorContainer = ({interpreter, firebase}) => {
+const EditorContainer = ({interpreter, firebase, exampleFile}) => {
 
   const baseContainer = css`
     height: calc(100vh - 48px - 1rem);
@@ -44,6 +44,10 @@ const EditorContainer = ({interpreter, firebase}) => {
       unSub();
     };
   }, []) // emty array -> works like comp. did mount
+
+  useEffect(() => {
+    if (exampleFile) importFile(exampleFile);
+  }, [exampleFile])
 
   const [dataSCH, setDataSCH] = useState({
     [id1]: {
@@ -188,7 +192,7 @@ const EditorContainer = ({interpreter, firebase}) => {
     console.log(currEnv);
     console.log(currInterpreter.interpretedFile, currInterpreter.env)
     let result = currInterpreter.interpret(input);
-    console.log(result);
+    console.log(result.ast);
     setEnvs({
       ...currEnvs,
       [fileId]: currInterpreter.env
@@ -223,14 +227,18 @@ const EditorContainer = ({interpreter, firebase}) => {
       }
       else {
         const file = doc.data();
-        file.id = fileId;
-        const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
-        const data = interpreter === 'sch' ? dataSCH : dataJSL;
-        const newData = { ...data };
-        newData[fileId] = file;
-        setData(newData);
+        importFile(file, fileId, true);
       }
     })
+  }
+
+  const importFile = (file, fileId=autoId(), fromFirebase=false) => {
+    file.id = fileId;
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const newData = { ...data };
+    newData[fileId] = file;
+    setData(newData);
   }
 
   const handleFileSave = () => {
@@ -316,6 +324,21 @@ const EditorContainer = ({interpreter, firebase}) => {
     setData(data);
   }
 
+  const handleResetFile = () => {
+    const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+    const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
+    const setEnvs = interpreter === 'sch' ? setSchEnvs : setJslEnvs;
+    const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    const newEnvs = { ...envs };
+    newEnvs[fileId] = schinter1.emptyEvn;
+    data[fileId].isSaved = false;
+    data[fileId].totalNumber = 0;
+    data[fileId].cells = data[fileId].cells.map(cell => ({ ...cell, num: " ", ast:"", error:"", num:" ", output:[], result:""}))
+    setEnvs(newEnvs);
+    setData(data);
+  }
+
   const handleRerunEnv = () => {
     const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
@@ -394,6 +417,7 @@ const EditorContainer = ({interpreter, firebase}) => {
           handleFileSave={handleFileSave}
           handleFileClose={handleFileClose}
           handleResetEnv={handleResetEnv}
+          handleResetFile={handleResetFile}
           handleRerunEnv={handleRerunEnv}
           handleClipboard={handleClipboard}
           handleAddFileBtn={handleCreateNewFile}

@@ -22,7 +22,8 @@ const theme = createMuiTheme({
 })
 
 const App = () => {
-  const [isInterpreterJSlike, setIsIetinterpreterJSlike] = useState(false)
+  const [isInterpreterJSlike, setIsIetinterpreterJSlike] = useState(false);
+  const [exampleFile, setExampleFile] = useState(false)
 
   const handleInterpreterChange = e => setIsIetinterpreterJSlike(e.target.checked);
   return (
@@ -31,9 +32,11 @@ const App = () => {
         <Header
           handleInterpreterChange={handleInterpreterChange}
           isInterpreterJSlike={isInterpreterJSlike}
+          setExampleFile={setExampleFile}
         />
         <EditorContainer
           interpreter={isInterpreterJSlike ? 'jsl' : 'sch'}
+          exampleFile={exampleFile}
         />
       </ThemeProvider>
     </div>

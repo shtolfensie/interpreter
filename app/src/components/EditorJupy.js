@@ -10,6 +10,7 @@ import RunIcon from '@material-ui/icons/SkipNext';
 import StopIcon from '@material-ui/icons/Stop';
 import ReloadIcon from '@material-ui/icons/Replay';
 import ReloadAndRunIcon from '@material-ui/icons/FastForward';
+import ResetFileIcon from '@material-ui/icons/SettingsBackupRestore';
 import EditIcon from '@material-ui/icons/Edit';
 // import CopyIcon from '@material-ui/icons/FileCopy';
 
@@ -223,6 +224,7 @@ const EditorJupy = ({
   handleFileSave,
   handleFileClose,
   handleResetEnv,
+  handleResetFile,
   handleRerunEnv,
   handleClipboard }) => {
   const [activeCell, setActiveCell] = useState(0);
@@ -409,6 +411,7 @@ const EditorJupy = ({
           handleInterpreter={handleInterpreter}
           handleResetEnv={handleResetEnv}
           handleRerunEnv={handleRerunEnv}
+          handleResetFile={handleResetFile}
           handleClipboard={handleClipboard}
           setShouldSetActive={setShouldSetActive}
           setShouldBeRenaming={setShouldBeRenaming}
@@ -569,6 +572,7 @@ const Toolbar = ({
   handleCreateNewCell,
   handleInterpreter,
   handleResetEnv,
+  handleResetFile,
   handleRerunEnv,
   handleClipboard,
   setShouldSetActive,
@@ -614,6 +618,7 @@ const Toolbar = ({
         <SquareButton title='run selected cell' onMouseUp={() => handleInterpreter(fileData.cells[activeCell].input, activeCell)} className={cssColor} variant={btnVariant}><RunIcon className={toolbarIcon}/></SquareButton>
         <SquareButton title='reload interpreter (all variables will be lost)' onMouseUp={handleResetEnv} className={cssColor} variant={btnVariant}><ReloadIcon className={toolbarIcon}/></SquareButton>
         <SquareButton title='reload interpreter and run all cells' onMouseUp={handleRerunEnv} className={cssColor} variant={btnVariant}><ReloadAndRunIcon className={toolbarIcon} /></SquareButton>
+        <SquareButton title='reload interpreter and reset all output (all variables and output data will be lost)' onMouseUp={handleResetFile} className={cssColor} variant={btnVariant}><ResetFileIcon className={toolbarIcon} /></SquareButton>
       </ButtonGroup>
     </div>
   )
@@ -787,8 +792,10 @@ const Cell = ({
       textArea.current.style.caretColor = 'rgba(0,0,0,0)';
       setTimeout(() => {
         if (selectionStart !== -1) {
-          textArea.current.selectionStart = selectionStart;
-          textArea.current.selectionEnd = selectionStart;
+          if (textArea.current) {
+            textArea.current.selectionStart = selectionStart;
+            textArea.current.selectionEnd = selectionStart;
+          }
         }
         if (textArea.current) textArea.current.style.caretColor = 'white';
       }, 0);

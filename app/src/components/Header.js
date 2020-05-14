@@ -5,12 +5,12 @@ import { AppBar, Toolbar, Avatar } from '@material-ui/core';
 import { Button } from '@material-ui/core';
 import { Menu, MenuItem, IconButton } from '@material-ui/core'
 import AccountCircle from '@material-ui/icons/AccountCircle';
-
+import ExamplesMenu from './ExamplesMenu';
 import AorBSwitch from './AorBSwitch.js';
 
 const useStyles = makeStyles(theme => ({
   grow: {
-    flexGrow: 1,
+    flexGrow: 3,
   },
   small: {
     width: theme.spacing(3),
@@ -19,7 +19,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Header = ({handleInterpreterChange, isInterpreterJSlike}) => {
+const Header = ({handleInterpreterChange, isInterpreterJSlike, setExampleFile}) => {
   const classes = useStyles();
   const [user, setUser] = useState(false);
   
@@ -29,6 +29,8 @@ const Header = ({handleInterpreterChange, isInterpreterJSlike}) => {
       <AppBar position="static">
         <Toolbar variant="dense">
           <AorBSwitch a='Schemy' b='JS-Like' handleChange={handleInterpreterChange} isChecked={isInterpreterJSlike}/>
+          <div style={{flexGrow: 0.1}}/>
+          <ExamplesMenu isInterpreterJSlike={isInterpreterJSlike} setExampleFile={setExampleFile}/>
           <div className={classes.grow}/>
           <FirebaseContext.Consumer>
             {firebase => <Login firebase={firebase}/>}
@@ -50,8 +52,9 @@ const AccountAvatarAndMenu = ({handleSignOut, userPhotoURL}) => {
   return (
     <div>
       { userPhotoURL
-      ? <Avatar onClick={handleMenuOpen} className={classes.small} src={userPhotoURL}/>
+      ? <Avatar style={{float: 'right'}} onClick={handleMenuOpen} className={classes.small} src={userPhotoURL}/>
       : <IconButton
+          style={{float: 'right'}}
           color='inherit'
           onClick={handleMenuOpen}
         >
@@ -95,7 +98,7 @@ const Login = ({firebase}) => {
 
   return (
     authUser
-      ? <AccountAvatarAndMenu handleSignOut={handleSignOut} userPhotoURL={authUser.photoURL}/>
+      ? <div style={{minWidth: 64}}><AccountAvatarAndMenu handleSignOut={handleSignOut} userPhotoURL={authUser.photoURL}/></div>
       : <Button color='inherit' onClick={firebase.doSignInWithGoogle}>Login</Button>
   )
 }
