@@ -231,16 +231,28 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
       }
     })
   }
-
+  
   const importFile = (file, fileId=autoId(), fromFirebase=false) => {
     file.id = fileId;
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const setCurrentFile = interpreter === 'sch' ? setCurrentSCHFile : setCurrentJSLFile;
     const newData = { ...data };
-    newData[fileId] = file;
-    setData(newData);
+    if (!Object.keys(newData).includes(fileId)) {
+      newData[fileId] = file;
+      setData(newData);
+    }
+    setCurrentFile(fileId);
   }
-
+  const handleFileDelete = fileId => { // this is called when deleting file from firebase to change the isSaved to false, so that users are reminded that the file is no longer saved
+    const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    const newData = interpreter === 'sch' ? {...dataSCH} : {...dataJSL};
+    if (Object.keys(newData).includes(fileId)) {
+      newData[fileId].isSaved = false;
+      setData(newData);
+    }
+  }
+  
   const handleFileSave = () => {
     const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
@@ -401,7 +413,7 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
 
   return (
     <>
-      <FileExplorer firebase={firebase} interpreter={interpreter} handleFileSelect={handleFileImport}/>
+      <FileExplorer firebase={firebase} interpreter={interpreter} handleFileSelect={handleFileImport} handleFileDelete={handleFileDelete}/>
       <div className={baseContainer}>
         <EditorJupy
           interpreter={interpreter}

@@ -6,9 +6,13 @@ import { List, ListItem, ListItemIcon, ListItemText, Divider, Icon } from '@mate
 import FileIcon from '@material-ui/icons/InsertDriveFile';
 import ArrowBackIcon from '@material-ui/icons/ArrowBackIos';
 import ArrowForwardIcon from '@material-ui/icons/ArrowForwardIos';
+import DeleteIcon from '@material-ui/icons/DeleteForever';
+
+import ConfirmModal from './ConfirmModal.js';
 
 const fileExplorerArrow = css`
   position: absolute;
+  z-index: 999;
   top: 150px;
   left: -8px;
   /* border: 2px solid black; */
@@ -33,7 +37,7 @@ const fileExplorerArrowHidden = css`
   background-color: rgba(0, 0, 0, 0.3);
   }
 `
-const fileExplorerWidth = 230;
+const fileExplorerWidth = 250;
 const fileExplorerBase = css`
   z-index: 1000;
   position: absolute;
@@ -44,9 +48,16 @@ const fileExplorerBase = css`
   background-color: #ffffff;
   box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
   transition: all 0.4s ease-in-out;
+  /* font-size: 0.4rem; */
 `
 const fileExplorerActive = css`
   left: -4px;
+`
+const listIconDelete = css`
+  min-width: 24px !important;
+  :hover {
+    color: #f50057;
+  }
 `
 
 const useStyles = makeStyles({
@@ -55,13 +66,14 @@ const useStyles = makeStyles({
   }
 })
 
-const FileExplorer = ({firebase, handleFileSelect, interpreter}) => {
+const FileExplorer = ({firebase, handleFileSelect, handleFileDelete, interpreter}) => {
   const classes = useStyles();
 
   const [files, setFiles] = useState([]);
   const [allFiles, setAllFiles] = useState([])
   const [authUser, setAuthUser] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   useEffect(() => {
 
@@ -91,6 +103,15 @@ const FileExplorer = ({firebase, handleFileSelect, interpreter}) => {
     setFiles(fileArr);
   }
 
+  const handleDeleteFileClick = (id) => setDeleteConfirm(id);
+  const handleDeleteFileConfirm = () => {
+    const id = deleteConfirm;
+    let deleteDoc = firebase.db.collection(authUser.uid).doc(id).delete();
+    setDeleteConfirm(false);
+    deleteDoc.then(() => handleFileDelete(id)).catch(err => console.log(`Error removing file: ${id}; ${err}`))
+  }
+  const handleDeleteModalClose = () => setDeleteConfirm(false);
+
   return (
     authUser
     ? <>
@@ -99,9 +120,22 @@ const FileExplorer = ({firebase, handleFileSelect, interpreter}) => {
         <List>
           <ListItem button key={0} onClick={() => setIsActive(false)}><ListItemIcon><ArrowBackIcon/></ListItemIcon><ListItemText primary='Close' /></ListItem>
           <Divider />
-          {files.map((file, i) => <ListItem onClick={() => handleFileSelect(file[1])} button key={i+1}><ListItemIcon className={classes.listIcon}><FileIcon /></ListItemIcon><ListItemText primary={file[0]}/></ListItem>)}
+          {files.map((file, i) => (
+            <ListItem title={file[0]} style={{height: 42}} onClick={() => handleFileSelect(file[1])} button key={i+1}>
+              <ListItemIcon className={classes.listIcon}><FileIcon /></ListItemIcon>
+              <ListItemText style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} primaryTypographyProps={{variant: 'body2'}} primary={file[0]}/>
+              <ListItemIcon title='Delete this file from the database' className={cx(listIconDelete, classes.listIcon)} onMouseUp={() => handleDeleteFileClick(file[1])}><DeleteIcon /></ListItemIcon>
+            </ListItem>
+          ))}
         </List>
       </div>
+      <ConfirmModal
+        open={deleteConfirm ? true : false}
+        buttons={[{text: 'Cancel', function: handleDeleteModalClose}, {text: 'Delete', function: handleDeleteFileConfirm, color: 'secondary', variant: 'outlined'}]}
+        title='Delete this file permanently?'
+        text="Deleting this file can't be undone."
+        handleClose={handleDeleteModalClose}
+      />
     </>
     : null
   )

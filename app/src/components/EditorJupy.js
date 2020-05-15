@@ -349,7 +349,10 @@ const EditorJupy = ({
 
   const handleKeysArr = ['all'];
 
-  const handleTabClick = id => handleChangeFile(id);
+  const handleTabClick = id => {
+    handleChangeFile(id);
+    setActiveCell(0); // to ensure that the cell isn't out of range in the new file
+  }
 
   const handleCreateNewCell = (newCellIndex, edit = true) => {
     createNewCell(newCellIndex);
