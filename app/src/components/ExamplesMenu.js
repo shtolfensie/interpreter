@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { css, cx } from 'emotion';
 import { Modal, Button, Collapse } from '@material-ui/core';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
@@ -17,6 +17,15 @@ const ExamplesMenu = ({ setExampleFile, isInterpreterJSlike }) => {
 
   const [isOpen, setIsOpen] = useState(true);
 
+  useEffect(() => { // to blur the examples button, focus the document and make the keyevent listener work. Needs to be in an effect to jire after the focus is shifted to the button after closing
+    if (!isOpen) {
+      window.focus();
+      setTimeout(() => { // timeout here helps with the animation of the focussed button not getting stuck. I think
+        if (document.activeElement) document.activeElement.blur();
+      }, 50);
+    }
+  }, [isOpen])
+
   const handleOpen = e => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
 
@@ -26,6 +35,7 @@ const ExamplesMenu = ({ setExampleFile, isInterpreterJSlike }) => {
       <Modal
         open={isOpen}
         onClose={handleClose}
+        keepMounted={true} // makes the sections remember their state. don't have to store the state in the main component
         style={{
           display: 'flex',
           justifyContent: 'center',

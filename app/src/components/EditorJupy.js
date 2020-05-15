@@ -240,6 +240,10 @@ const EditorJupy = ({
   });
 
   useEffect(() => {
+    setActiveCell(0); // to ensure that the cell isn't out of range in the new file
+  }, [fileData.id])
+
+  useEffect(() => {
     if (shouldCreateNewCell !== false) {
       handleCreateNewCell(shouldCreateNewCell);
     }
@@ -257,12 +261,15 @@ const EditorJupy = ({
   }, [shouldBeRenaming]);
 
   useEffect(() => {
-    const acEl = document.querySelector('#ac');
-    const cont = document.querySelector('#cont');
-    if (acEl.getBoundingClientRect().bottom > window.innerHeight - (ccBottomMargin+16)) cont.scrollBy(0, acEl.getBoundingClientRect().bottom - (window.innerHeight - (ccBottomMargin+16)));
-    else if (acEl.getBoundingClientRect().top < cont.getBoundingClientRect().top + 16) cont.scrollBy(0, -1*(cont.getBoundingClientRect().top - acEl.getBoundingClientRect().top + 16) )
-    // if (acEl.getBoundingClientRect().bottom > 900) cont.scroll({letf:  0, top: 900 + acEl.getBoundingClientRect().height, behavior: 'smooth'})
-    // else if (acEl.getBoundingClientRect().top < cont.getBoundingClientRect().top) cont.scroll({letf: 0, top: -1 * (cont.getBoundingClientRect().top + 16 + acEl.getBoundingClientRect().height), behavior: 'smooth'})
+    const acEl = document.querySelector('#ac'); // active cell
+    const cont = document.querySelector('#cont'); // cell scroll container
+    if (acEl.getBoundingClientRect().bottom > window.innerHeight - (ccBottomMargin+16)) { // if cell's bottom is not visible after select
+      if (acEl.offsetHeight > window.innerHeight - (ccBottomMargin+16) - (cont.getBoundingClientRect().top+16)) { // if cell is taller than the height of the container, scroll so that the top of the cell is visible
+        cont.scrollBy(0, acEl.getBoundingClientRect().top - cont.getBoundingClientRect().top - 16);
+      }
+      else cont.scrollBy(0, acEl.getBoundingClientRect().bottom - (window.innerHeight - (ccBottomMargin+16))); // if not, scroll so that the bottom most part of the ENTIRE cell is visible (incl output)
+    }
+    else if (acEl.getBoundingClientRect().top < cont.getBoundingClientRect().top + 16) cont.scrollBy(0, -1*(cont.getBoundingClientRect().top - acEl.getBoundingClientRect().top + 16) ) // if cell's top is not visible
   }, [activeCell])
 
   //#region topBar css depending on interpreter
@@ -349,10 +356,7 @@ const EditorJupy = ({
 
   const handleKeysArr = ['all'];
 
-  const handleTabClick = id => {
-    handleChangeFile(id);
-    setActiveCell(0); // to ensure that the cell isn't out of range in the new file
-  }
+  const handleTabClick = id => handleChangeFile(id);
 
   const handleCreateNewCell = (newCellIndex, edit = true) => {
     createNewCell(newCellIndex);
