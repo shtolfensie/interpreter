@@ -9,7 +9,7 @@ import autoId from '../utils/autoId';
 
 import SchInterpreter from '../interpreters/schemy.js';
 
-import { emptySchFile, emptyJslFile } from '../utils/emptyfiles.js';
+import { emptySchFile, emptyJslFile, emptySchFileEditorData, emptyJslFileEditorData } from '../utils/emptyfiles.js';
 
 const schinter1 = new SchInterpreter('untitled1');
 const emptyEvn = schinter1.emptyEvn;
@@ -97,6 +97,17 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
   },
 });
   const [currentSCHFile, setCurrentSCHFile] = useState(id1);
+  const [schFileEditorData, setSchFileEditorData] = useState({[id1]: {
+    cells: [
+    { outputCollapse: false },
+    { outputCollapse: false }
+  ]},
+  [id2]: {
+    cells: [
+      { outputCollapse: false },
+      { outputCollapse: false }
+    ]
+  }})
   const [schEnvs, setSchEnvs] = useState({[id1]: schinter1.emptyEvn, [id2]: schinter1.emptyEvn})
   const [schClipboard, setSchClipboard] = useState(null);
 
@@ -117,6 +128,7 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     isSaved: false
   }});
   const [currentJSLFile, setCurrentJSLFile] = useState(id3);
+  const [jslFileEditorData, setJslFileEditorData] = useState({[id3]: emptyJslFileEditorData})
   const [jslEnvs, setJslEnvs] = useState({[id3]: {}});
   const [jslClipboard, setJslClipboard] = useState(null);
 
@@ -156,7 +168,7 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     let currFile = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     let newCellArr = [...data[currFile].cells];
     newCellArr[cellIndex] = {...newCellArr[cellIndex], ...newCellData};
-    // console.log(newCellData, newCellArr)
+    console.log(newCellData, newCellArr)
     let newData = {...data};
     newData[currFile] = { ...data[currFile], cells: newCellArr, isSaved: false };
     if (newCellData.hasOwnProperty('num')) newData[currFile] = {...newData[currFile], totalNumber: newData[currFile].totalNumber+1}
@@ -168,14 +180,20 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
 
   const createNewCell = (newCellIndex) => {
     let data = interpreter === 'sch' ? dataSCH : dataJSL;
+    let fileEditorData = interpreter === 'sch' ? {...schFileEditorData} : {...jslFileEditorData};
+    const setFileEditorData = interpreter === 'sch' ? setSchFileEditorData : setJslFileEditorData;
     console.log(data)
     let currFile = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+    let currFileEditorCells = fileEditorData[currFile].cells;
     let emptyCellObj = { num: ' ', input: '', output: '', result: '', error: '', ast: '' };
     let newCellArr = [...data[currFile].cells];
-    newCellArr.splice(newCellIndex, 0 , emptyCellObj);
+    newCellArr.splice(newCellIndex, 0, emptyCellObj);
+    currFileEditorCells.splice(newCellIndex, 0, {outputCollapse: false});
+    fileEditorData[currFile].cells = currFileEditorCells;
     let newData = {...data};
     newData[currFile] = { ...data[currFile], cells: newCellArr, isSaved: false }
     interpreter === 'sch' ? setDataSCH(newData) : setDataJSL(newData);
+    setFileEditorData(fileEditorData);
   }
 
   const handleInterpreter = (input, cellIndex) => {
@@ -197,7 +215,6 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
       ...currEnvs,
       [fileId]: currInterpreter.env
     });
-    console.log('before', dataSCH);
     if (result.error && result.res === "'") result.res = '';
     handleCellChange({num: currNumber+1,output: result.output ? result.output : '', result: result.res ? result.res : '', error: result.error ? result.error : ''}, cellIndex);
   }
@@ -236,11 +253,17 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     file.id = fileId;
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
+    const fileEditorData = interpreter === 'sch' ? {...schFileEditorData} : {...jslFileEditorData};
+    const setFileEditorData = interpreter === 'sch' ? setSchFileEditorData : setJslFileEditorData;
+    const emptyFileEditorData = interpreter === 'sch' ? {...emptySchFileEditorData} : {...emptyJslFileEditorData};
     const setCurrentFile = interpreter === 'sch' ? setCurrentSCHFile : setCurrentJSLFile;
     const newData = { ...data };
     if (!Object.keys(newData).includes(fileId)) {
       newData[fileId] = file;
       setData(newData);
+      fileEditorData[fileId] = emptyFileEditorData;
+      fileEditorData[fileId].cells = file.cells.map(() => emptyFileEditorData.cells[0]);
+      setFileEditorData(fileEditorData);
     }
     setCurrentFile(fileId);
   }
@@ -275,6 +298,9 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
   const handleCreateNewFile = () => {
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
     const newData = {...data};
+    const fileEditorData = interpreter === 'sch' ? {...schFileEditorData} : {...jslFileEditorData};
+    const setFileEditorData = interpreter === 'sch' ? setSchFileEditorData : setJslFileEditorData;
+    const emptyFileEditorData = interpreter === 'sch' ? {...emptySchFileEditorData} : {...emptyJslFileEditorData};
     let newName = 'untitled1';
     for(let i = 2; i < 25; i++) {
       if (i === 20) {
@@ -290,6 +316,8 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     console.log(newData)
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
     const setCurrentFile = interpreter === 'sch' ? setCurrentSCHFile : setCurrentJSLFile;
+    fileEditorData[newFile.id] = emptyFileEditorData;
+    setFileEditorData(fileEditorData);
     setData(newData);
     setCurrentFile(newFile.id);
   }
@@ -317,8 +345,12 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     const envs = interpreter === 'sch' ? schEnvs : jslEnvs;
     delete envs[fileId];
     const newEnvs = { ...envs };
+    const fileEditorData = interpreter === 'sch' ? {...schFileEditorData} : {...jslFileEditorData};
+    const setFileEditorData = interpreter === 'sch' ? setSchFileEditorData : setJslFileEditorData;
+    delete fileEditorData[fileId]
     console.log(newData)
     console.log(newEnvs)
+    setFileEditorData(fileEditorData);
     setData(newData);
     setEnvs(newEnvs);
   }
@@ -385,6 +417,9 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
     const data = interpreter === 'sch' ? dataSCH : dataJSL;
     const setData = interpreter === 'sch' ? setDataSCH : setDataJSL;
+    const fileEditorData = interpreter === 'sch' ? {...schFileEditorData} : {...jslFileEditorData};
+    const setFileEditorData = interpreter === 'sch' ? setSchFileEditorData : setJslFileEditorData;
+    const emptyFileEditorData = interpreter === 'sch' ? {...emptySchFileEditorData} : {...emptyJslFileEditorData};
     const clipboard = interpreter === 'sch' ? schClipboard : jslClipboard;
     const setClipboard = interpreter === 'sch' ? setSchClipboard : setJslClipboard;
     let toClipboard = null;
@@ -395,20 +430,33 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     }
     else if (operation === 'cut') {
       toClipboard = data[fileId].cells.splice(cellIndex, 1)[0];
+      fileEditorData[fileId].cells.splice(cellIndex, 1);
     }
     else if (operation === 'paste' && clipboard !== null) {
       data[fileId].cells.splice(cellIndex, 0, clipboard);
       newData = { ...data };
+      fileEditorData[fileId].cells.splice(cellIndex, 0, emptyFileEditorData.cells[0]);
     }
     else if (operation === 'delete' && data[fileId].cells.length > 1)  {
       data[fileId].cells.splice(cellIndex, 1);
       newData = { ...data };
+      fileEditorData[fileId].cells.splice(cellIndex, 1);
     }
     if (toClipboard !== null) setClipboard(toClipboard);
     if (newData !== null) {
       newData[fileId].isSaved = false;
       setData(newData);
+      setFileEditorData(fileEditorData);
     }
+    if (operation === 'cut') setFileEditorData(fileEditorData);
+  }
+
+  const handleFileEditorDataChange = (cellIndex, newCellData) => {
+    const fileId = interpreter === 'sch' ? currentSCHFile : currentJSLFile;
+    const editorData = interpreter === 'sch' ? {...schFileEditorData} : {...jslFileEditorData};
+    const setEditorData = interpreter === 'sch' ? setSchFileEditorData : setJslFileEditorData;
+    editorData[fileId].cells[cellIndex] = newCellData;
+    setEditorData(editorData);
   }
 
   return (
@@ -420,6 +468,9 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
           fileData={interpreter === 'sch'
           ? dataSCH[currentSCHFile]
           : dataJSL[currentJSLFile]}
+          fileEditorData={interpreter === 'sch'
+          ? schFileEditorData[currentSCHFile]
+          : jslFileEditorData[currentJSLFile]}
           activeFilesArray={activeFilesArray}
           handleCellChange={handleCellChange}
           handleInterpreter={handleInterpreter}
@@ -433,6 +484,7 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
           handleRerunEnv={handleRerunEnv}
           handleClipboard={handleClipboard}
           handleAddFileBtn={handleCreateNewFile}
+          handleFileEditorDataChange={handleFileEditorDataChange}
           />
       </div>
     </>

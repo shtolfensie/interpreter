@@ -140,10 +140,11 @@ const createGlobals = env => {
   env["integer?"] = a => Number.isInteger(a);
 
   env["display"] = a => setOutput(toSchemeDisplayString(a));
+  env["write"] = a => setOutput(toSchemeWriteString(a, true))
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
     // to prevent an error when trying to ...spread a variable that is not an array. To enforce the syntax - last arg must be a list
-    if (!Array.isArray(list)) error(`Syntax Error: at procedure: apply, expected: list, given: ${toSchemeDisplayString(list)} `)
+    if (!Array.isArray(list)) error(`Syntax Error: at procedure: apply, expected: list, given: ${toSchemeWriteString(list)} `)
     args = [ ...args, ...list ];
     return callable.apply(null, args);
   };
@@ -297,14 +298,14 @@ const evalQuasiQuote = (ast, env, lvl = 0) => {
   if (Array.isArray(ast)) {
     if (ast[0][0] === UNQUOTE_SPLICING && lvl === 1) {
       const resultList = evaluate(ast[0].slice(1)[0], env);
-      if (!Array.isArray(resultList) || resultList.length === 0) error(`Splicing Error: at: ${toSchemeDisplayString(ast[0])}, expected a list, given: ${resultList}`);
+      if (!Array.isArray(resultList) || resultList.length === 0) error(`Splicing Error: at: ${toSchemeWriteString(ast[0])}, expected a list, given: ${resultList}`);
       return [ ...resultList, ...Array.from(evalQuasiQuote(ast.slice(1), env, lvl)) ];
     }
     return [ evalQuasiQuote(ast[0], env, lvl), ...Array.from(evalQuasiQuote(ast.slice(1), env, lvl)) ];
   }
 };
 
-const toSchemeDisplayString = (ast, lvl = false) => {
+const toSchemeWriteString = (ast, lvl = false) => {
   if (typeof ast === "string") return ((ast[0] === '"' && ast[ast.length-1] === '"')
                                       || (ast[0] === '#' && ast[1] === '\\' && ast.length === 3)) ? ast
                                         : lvl ? `'${ast}`
@@ -316,21 +317,53 @@ const toSchemeDisplayString = (ast, lvl = false) => {
     if (Array.from(Object.values(quoteList)).includes(ast[0]))
       return `${lvl ? "'" : ""}${Array.from(Object.entries(quoteList)).filter(pair => pair[1] === ast[0])[0][0]}${ast
         .slice(1)
-        .map(list => toSchemeDisplayString(list))
+        .map(list => toSchemeWriteString(list))
         .join(" ")}`;
-    return `${lvl ? "'" : ''}(${ast.map(list => toSchemeDisplayString(list)).join(" ")})`;
+    return `${lvl ? "'" : ''}(${ast.map(list => toSchemeWriteString(list)).join(" ")})`;
   }
 };
+
+const unescaper = (match, g1) => {
+  switch (g1) {
+    case 'n':
+      return '\n';
+    case 't':
+      return '\t';
+    case 'r':
+      return '\r';
+    case '"':
+    case "'":
+    case '\\':
+      return g1;
+    default:
+      break;
+  }
+}
+const toSchemeDisplayString = (ast) => {
+  if (typeof ast === "string") return (ast[0] === '#' && ast[1] === '\\' && ast.length === 3) ? ast[2]
+                                      : (ast[0] === '"' && ast[ast.length-1] === '"') ? ast.slice(1, ast.length-1).replace(/\\([ntr"'\\])/g, unescaper) : ast;
+  else if (typeof ast === "number") return `${ast}`;
+  else if (typeof ast === "function") return `#<procedure>`;
+  else if (typeof ast === "boolean") return ast ? "#t" : "#f";
+  else if (Array.isArray(ast)) {
+    if (Array.from(Object.values(quoteList)).includes(ast[0]))
+      return `${Array.from(Object.entries(quoteList)).filter(pair => pair[1] === ast[0])[0][0]}${ast
+        .slice(1)
+        .map(list => toSchemeDisplayString(list))
+        .join(" ")}`;
+    return `(${ast.map(list => toSchemeDisplayString(list)).join(" ")})`;
+  }
+}
 
 const isSymbol = s => typeof s === "string" &&  !(/^#\\|^".*("$)|^#/.test(s));
 const checkVariable = (variable, {varName, ast}, fromSet) => {
   if (variable === undefined && !fromSet) return error(`Unassigned variable: ${varName}`);
-  else if (variable === null) return error(`Unbound symbol: ${varName}${ast ? `, at ${toSchemeDisplayString(ast)}` : ""}`);
+  else if (variable === null) return error(`Unbound symbol: ${varName}${ast ? `, at ${toSchemeWriteString(ast)}` : ""}`);
 }
 const checkQuote = ast => ast.length !== 2 ? error(`Syntax error: quote: ${ast.length === 1 ? "no arguments" : "too many arguments"}`) : null;
 const checkDefine = ast => {
   let msg = '';
-  let astString = toSchemeDisplayString(ast);
+  let astString = toSchemeWriteString(ast);
   if (ast.length < 2) msg = `not enough arguments, at ${astString}`;
   else if (!Array.isArray(ast[1]) && !isSymbol(ast[1])) msg =`not an identifier, at: ${ast[1]}, in: ${astString}`;
   else if (Array.isArray(ast[1])) {
@@ -349,14 +382,14 @@ const checkLambda = (vars, bodyArray, ast) =>  {
   }
   else if (!Array.isArray(vars)) msg = "missing () around formals definition";
   else vars.forEach(v => !isSymbol(v) ? msg = `not an identifier, at: ${v}` : null);
-  if (msg) error(`Syntax error: lambda: ${msg}, in ${toSchemeDisplayString(ast)}`);
+  if (msg) error(`Syntax error: lambda: ${msg}, in ${toSchemeWriteString(ast)}`);
 }
 const checkIf = ast => ast.length !== 4 ? error(`Syntax error: if: invalid number of argumnets`) : null;
 const checkCond = ast => !(ast.length > 1) ? error("Syntax error: cond: no clauses provided")
-                          : ast.slice(1).forEach(c => !Array.isArray(c) ? error(`Syntax error: cond: clause is not a test-value pair, at: ${toSchemeDisplayString(c)}`):null);
-const checkCondElseClause = (clause, cond) => clause.length < 2 ? error(`Syntax error: cond: missing expressions in 'else' clause, at: ${toSchemeDisplayString(cond)}`):true;
+                          : ast.slice(1).forEach(c => !Array.isArray(c) ? error(`Syntax error: cond: clause is not a test-value pair, at: ${toSchemeWriteString(c)}`):null);
+const checkCondElseClause = (clause, cond) => clause.length < 2 ? error(`Syntax error: cond: missing expressions in 'else' clause, at: ${toSchemeWriteString(cond)}`):true;
 const checkLet = (ast, fromLetStar = false) => {
-  let msg = '', astString = toSchemeDisplayString(ast);
+  let msg = '', astString = toSchemeWriteString(ast);
   if (!Array.isArray(ast[1]) && !fromLetStar) {
     if (!isSymbol(ast[1])) msg = `named-let: 'name' not an identifier, at: ${ast[1]}, in: ${astString}`;
     ast = [ast[0], ...ast.slice(2)];
@@ -371,7 +404,7 @@ const checkLet = (ast, fromLetStar = false) => {
   if (ast.length < 3) msg += `${msg?"; ":""}let: missing body, in: ${astString}`;
   if (msg) error(`Syntax error: ${msg}`);
 }
-const checkProcedure = (procedure, ast) => typeof procedure !== 'function' ? error(`Application error: '${ast[0]}' is not a procedure, at: ${toSchemeDisplayString(ast)}`) : null;
+const checkProcedure = (procedure, ast) => typeof procedure !== 'function' ? error(`Application error: '${ast[0]}' is not a procedure, at: ${toSchemeWriteString(ast)}`) : null;
 
 // const repl = () => {
 //   const rl = readline.createInterface({
@@ -447,8 +480,7 @@ class Interpreter {
     } catch (err) {
       this.error = err;
     }
-  
-    return {res: toSchemeDisplayString(this.res, true), output, error: this.error, ast: this.ast}
+    return {res: toSchemeWriteString(this.res, true), output: output.join(''), error: this.error, ast: this.ast}
   }
 }
 

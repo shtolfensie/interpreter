@@ -14,6 +14,11 @@ let emptySchFile = {
   isSaved: false,
   id: null
 };
+let emptySchFileEditorData = {
+  cells: [
+    { outputCollapse: false }
+  ]
+}
 
 let emptyJslFile = {
   fileName: null,
@@ -31,5 +36,10 @@ let emptyJslFile = {
   isSaved: false,
   id: null
 };
+let emptyJslFileEditorData = {
+  cells: [
+    { outputCollapse: false }
+  ]
+}
 
-export { emptySchFile, emptyJslFile }
+export { emptySchFile, emptyJslFile, emptySchFileEditorData, emptyJslFileEditorData }

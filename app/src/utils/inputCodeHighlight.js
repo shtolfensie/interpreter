@@ -13,7 +13,8 @@ const shouldSkip = (hCode, i) => {
   const enclosingStringSpan = hCode.lastIndexOf("<span class=\"hljs-string\">", i);
   const enclosingCommentSpan = hCode.lastIndexOf("<span class=\"hljs-comment\">", i);
   const closingSpan = hCode.lastIndexOf("</span>", i);
-  return enclosingStringSpan > closingSpan | enclosingCommentSpan > closingSpan;
+  const likelyChar = (hCode[i-1] === '\\' && hCode[i-2] === '#');
+  return enclosingStringSpan > closingSpan | enclosingCommentSpan > closingSpan | likelyChar;
 }
 
 const bracketColorizer = (hCode, code, caretPos) => {

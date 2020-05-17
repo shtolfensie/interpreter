@@ -12,6 +12,8 @@ import ReloadIcon from '@material-ui/icons/Replay';
 import ReloadAndRunIcon from '@material-ui/icons/FastForward';
 import ResetFileIcon from '@material-ui/icons/SettingsBackupRestore';
 import EditIcon from '@material-ui/icons/Edit';
+import CollapseOutArrowIcon from '@material-ui/icons/NavigateNext';
+import MoreHDotsIcon from '@material-ui/icons/MoreHoriz';
 // import CopyIcon from '@material-ui/icons/FileCopy';
 
 import TextareaAutosize from 'react-autosize-textarea';
@@ -214,6 +216,7 @@ const addFileBtn = css`
 const EditorJupy = ({
   interpreter,
   fileData,
+  fileEditorData,
   activeFilesArray,
   handleCellChange,
   handleInterpreter,
@@ -226,7 +229,8 @@ const EditorJupy = ({
   handleResetEnv,
   handleResetFile,
   handleRerunEnv,
-  handleClipboard }) => {
+  handleClipboard,
+  handleFileEditorDataChange }) => {
   const [activeCell, setActiveCell] = useState(0);
   const [isEdit, setIsEdit] = useState(true)
   const [shouldCreateNewCell, setShouldCreateNewCell] = useState(false);
@@ -337,7 +341,7 @@ const EditorJupy = ({
       else if (e.keyCode === 83 && e.ctrlKey) handleFileSave();
       else if (e.keyCode === 67 && e.ctrlKey) handleClipboard('copy', activeCell); // ctrl+c
       else if (e.keyCode === 86 && e.ctrlKey) handleClipboard('paste', activeCell+1); // ctrl+v
-      else if (e.keyCode === 88 && e.ctrlKey) { // ctrl+x
+      else if (e.keyCode === 88 && e.ctrlKey && fileData.cells.length !== 1) { // ctrl+x
         handleClipboard('cut', activeCell);
         let cellIndex = activeCell;
         if (cellIndex > fileData.cells.length-1) cellIndex-=1;
@@ -346,7 +350,7 @@ const EditorJupy = ({
       else if (e.keyCode === 46)  { // delete
         handleClipboard('delete', activeCell);
         let cellIndex = activeCell;
-        if (cellIndex > fileData.cells.length-1 && fileData.cells.length !== 1) cellIndex-=1;
+        if ((cellIndex > fileData.cells.length-1) && cellIndex - 1 >= 0) cellIndex-=1;
         setShouldSetActive(cellIndex);
       }
       else if (e.keyCode === 65) handleCreateNewCell(activeCell, false); // a
@@ -441,11 +445,13 @@ const EditorJupy = ({
                 key={i}
                 cellIndex={i}
                 cellData={cell}
+                cellEditorData={fileEditorData.cells[i]}
                 selectionStart={selectionStart}
                 isLast={i === fileData.cells.length-1}
                 handleInterpreter={handleInterpreter}
                 createNewCell={setShouldCreateNewCell}
                 handleFileSave={handleFileSave}
+                handleFileEditorDataChange={handleFileEditorDataChange}
               />
             ))}
           </div>
@@ -669,7 +675,7 @@ const inOutContainer = css`
   justify-content: flex-start;
 `
 const promptContainer = css`
-  width: 100px;
+  min-width: 100px;
   height: 100%;
 `
 const prompt = css`
@@ -712,6 +718,39 @@ const outputArea = css`
   font-size: 14px;
   line-height: 1.21429em;
   font-family: monospace;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+`
+const outputCollapse = css`
+  float: right;
+  height: 28px;
+  width: 28px;
+  transform: rotate(90deg);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  svg {
+    visibility: hidden;
+  }
+  :hover svg {
+    visibility: visible;
+  }
+`
+const outputCollapseTrue = css`
+  svg {
+    visibility: visible;
+  }
+  transform: none;
+`
+const outputAreaCollapsed = css`
+  /* background: #b7b7b7; */
+  background: #6a73a7;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0.25em 0.4em 0.25em 0.4em;
+  margin: 0.15em 0 0.15em 0;
 `
 const errorPrompt = css`
   color: red;
@@ -779,13 +818,15 @@ const Cell = ({
   cellIndex,
   selectionStart,
   cellData,
+  cellEditorData,
   isLast,
   isActive,
   isEdit,
   handleActiveCellChange,
   handleInterpreter,
   createNewCell,
-  handleFileSave}) => {
+  handleFileSave,
+  handleFileEditorDataChange }) => {
   const {num, input, output, result, error, ast} = cellData;
   const textArea = useRef();
   const [cellHeight, setCellHeight] = useState(32);
@@ -813,13 +854,15 @@ const Cell = ({
   //   setCellHeight(textArea.current.offsetHeight)
   // }, [])
   useEffect(() => {
-    setCellHeight(textArea.current.offsetHeight)
+    setCellHeight(textArea.current.offsetHeight);
   }, [input])
   
   const handleChange = e => {
     handleCellInputChange({ input: e.target.value });
     if (cellHeight !== e.target.offsetHeight) setCellHeight(e.target.offsetHeight);
   }
+
+  const handleOutputCollapseToggle = () => handleFileEditorDataChange(cellIndex, {...cellEditorData, outputCollapse: !cellEditorData.outputCollapse});
 
   const handleCellInputKeyDown = e => {
     e.stopPropagation();
@@ -1054,14 +1097,21 @@ const Cell = ({
           <pre  className={cx(inputHighlighted, 'hljs')} style={{height: cellHeight}}>{highlightInput(input, caretPos)}</pre>
         </div>
       </div>
-      {Array.isArray(output) && output.map((out, i) => (
-        <div className={inOutContainer} key={i}>
-          <div className={promptContainer} />
-          <div className={outputArea}>
-            {out}
-          </div>  
+      {output.length !== 0 && 
+        <div className={inOutContainer}>
+          <div className={promptContainer}>
+            <div className={cx(outputCollapse, {[outputCollapseTrue]: cellEditorData.outputCollapse})} onMouseDown={handleOutputCollapseToggle}><CollapseOutArrowIcon /></div>
+          </div>
+          {cellEditorData.outputCollapse
+            ? <div className={cx(outputArea, outputAreaCollapsed)}>
+              <div>{output.slice('\n')[0]}</div><MoreHDotsIcon onMouseDown={handleOutputCollapseToggle} style={{fontSize: 'inherit', cursor: 'pointer'}}/>
+            </div>
+            : <pre className={outputArea}>
+                {output}
+            </pre>  
+          }
         </div>
-      ))}
+      }
       {result && <div className={inOutContainer}>
         <div className={promptContainer}>
           <div className={cx(prompt, outputPrompt)}>Out[{num}]:</div>
