@@ -72,6 +72,96 @@ const exampleFiles = {
 
 const sectionArray = [
   {
+    sectionTitle: 'Basic syntax and keywords',
+    examples: [
+      {
+        eTitle: 'define: defining variables and procedures',
+        eId: 'defId'
+      },
+      {
+        eTitle: 'set!: mutating variables',
+        eId: 'setId'
+      },
+      {
+        eTitle: 'lambda: creating procedures',
+        eId: 'lamId',
+      },
+      {
+        eTitle: 'Basic math functions',
+        eId: 'BMFid'
+      },
+      {
+        eTitle: 'begin',
+        eId: 'begId'
+      },
+      {
+        eTitle: 'let, let*: defining local variables',
+        eId: 'letId'
+      }
+    ]
+  },
+  {
+    sectionTitle: "Conditionals",
+    examples: [
+      {
+        eTitle: 'Logical operators',
+        eId: 'LOGICALid'
+      },
+      {
+        eTitle: 'Using if',
+        eId: 'ifId'
+      },
+      {
+        eTitle: 'Using cond',
+        eId: 'condId'
+      }
+    ]
+  },
+  {
+    sectionTitle: 'Recursion',
+    examples: [
+      {
+        eTitle: 'How to use recursion',
+        eId: 'RECid'
+      }
+    ]
+  },
+  {
+    sectionTitle: 'Lists',
+    examples: [
+      {
+        eTitle: 'Creating lists',
+        eId: 'CRELIid'
+      },
+      {
+        eTitle: 'List procedures',
+        eId: 'LIPROCid'
+      }
+    ]
+  },
+  {
+    sectionTitle: 'Quoting, Quasiquoting',
+    examples: [
+      {
+        eTitle: 'quote',
+        eId: 'quoteId',
+      },
+      {
+        eTitle: 'quasiquote, unquote and unquote-splicing',
+        eId: 'QUUQid'
+      }
+    ]
+  },
+  {
+    sectionTitle: 'Strings (and chars??)',
+    examples: [
+      {
+        eTitle: 'Working with strings',
+        eId: 'strId'
+      }
+    ]
+  },
+  {
     sectionTitle: "FizzBuzz",
     examples: [
       {
@@ -90,6 +180,23 @@ const sectionArray = [
         eTitle: "General FizzBuzz",
         eId: "GenFBId"
       },
+    ]
+  },
+  {
+    sectionTitle: 'Using the interface',
+    examples: [
+      {
+        eTitle: 'Choosing an interpreter',
+        eId: 'intId'
+      },
+      {
+        eTitle: 'Editor shortcuts',
+        eId: 'ESHOid'
+      },
+      {
+        eTitle: 'Saving files',
+        eId: 'SAVFIid'
+      }
     ]
   }
 ];
