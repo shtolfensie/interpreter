@@ -397,7 +397,9 @@ const EditorContainer = ({interpreter, firebase, exampleFile}) => {
     data[fileId].isSaved = false;
     data[fileId].totalNumber = 0;
     for (let i = 0; i < currentCells.length; i++) {
-      let result = currInterpreter.interpret(currentCells[i].input)
+      if (currentCells[i].input.length === 0) continue;
+      let result = currInterpreter.interpret(currentCells[i].input);
+      if (result.error && result.res === "'") result.res = '';
       newEnv = currInterpreter.env;
       data[fileId].cells[i] = {...data[fileId].cells[i],
         num: data[fileId].totalNumber+1,

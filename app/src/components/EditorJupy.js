@@ -558,7 +558,7 @@ const FileTab = ({fileName, fileId, handleFileRename, handleClick, handleCloseCl
       }}
     >
       {isRenaming && <div contentEditable={isRenaming} ref={nameDiv} onKeyDown={handleKeyDown} onBlur={handleBlur} className={fileTabCE}>{fileName}</div>}
-      <div style={!isRenaming ? {display: 'block'} : {display: 'none'}} className={fileTabNameHolder}>{fileName}</div>
+      <div title={fileName} style={!isRenaming ? {display: 'block'} : {display: 'none'}} className={fileTabNameHolder}>{fileName}</div>
       <div title={!isSaved && 'file not saved'} style={{height: '16px', width: '16px'}}>{!isSaved && <CircleIcon color='secondary' style={{fontSize: '16px', height: '16px'}}/>}</div>
       <div onMouseUp={(e) => {
         e.stopPropagation();
@@ -1104,7 +1104,7 @@ const Cell = ({
           </div>
           {cellEditorData.outputCollapse
             ? <div className={cx(outputArea, outputAreaCollapsed)}>
-              <div>{output.slice('\n')[0]}</div><MoreHDotsIcon onMouseDown={handleOutputCollapseToggle} style={{fontSize: 'inherit', cursor: 'pointer'}}/>
+              <div>{output.split('\n')[0]}</div><MoreHDotsIcon onMouseDown={handleOutputCollapseToggle} style={{fontSize: 'inherit', cursor: 'pointer'}}/>
             </div>
             : <pre className={outputArea}>
                 {output}

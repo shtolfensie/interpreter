@@ -12,7 +12,7 @@ const error = (msg = "Syntax error") => {
 const quoteList = { "'": QUOTE, "`": QUASI_QUOTE, ",": UNQUOTE, ",@": UNQUOTE_SPLICING };
 
 const Parser = program => {
-  let lines = program.split("\n");
+  let lines = program.split("\n").map(line => line.trim()).filter(line => line.length > 0);
   let line = 0;
 
   const parse = token => {
@@ -140,7 +140,9 @@ const createGlobals = env => {
   env["integer?"] = a => Number.isInteger(a);
 
   env["display"] = a => setOutput(toSchemeDisplayString(a));
-  env["write"] = a => setOutput(toSchemeWriteString(a, true))
+  env["write"] = a => setOutput(toSchemeWriteString(a, true));
+  env["write-line"] = a => setOutput(toSchemeWriteString(a, true)+'\n');
+  env["newline"] = () => setOutput('\n');
   env["apply"] = (callable, ...args) => {
     let list = args.pop();
     // to prevent an error when trying to ...spread a variable that is not an array. To enforce the syntax - last arg must be a list
