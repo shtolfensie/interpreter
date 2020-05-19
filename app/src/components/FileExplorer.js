@@ -15,17 +15,12 @@ const fileExplorerArrow = css`
   z-index: 999;
   top: 150px;
   left: -8px;
-  /* border: 2px solid black; */
   box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
   border-radius: 10px;
   user-select: none;
-  /* padding: 0.6rem; */
-  /* padding-left: 1rem; */
-  /* font-size: 1.1rem; */
-  /* text-align: center; */
-  /* vertical-align: middle; */
   cursor: pointer;
   transition: all 0.3s ease-in-out;
+  background-color: #fff;
   :hover {
     background-color: rgba(0, 0, 0, 0.04);
   }
@@ -48,7 +43,26 @@ const fileExplorerBase = css`
   background-color: #ffffff;
   box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
   transition: all 0.4s ease-in-out;
-  /* font-size: 0.4rem; */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+`
+const fileExplorerFiles = css`
+  overflow-y: auto;
+  padding-bottom: 8px;
+  ::-webkit-scrollbar-track {
+    display: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    // background-color: #F5F5F5;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(58, 62, 74, 0.55);
+  }
 `
 const fileExplorerActive = css`
   left: -4px;
@@ -117,9 +131,10 @@ const FileExplorer = ({firebase, handleFileSelect, handleFileDelete, interpreter
     ? <>
       <div className={cx(fileExplorerArrow, {[fileExplorerArrowHidden]: isActive})} onClick={() => setIsActive(true)}><ListItem><ListItemIcon className={classes.listIcon}><ArrowForwardIcon/></ListItemIcon><ListItemText primary='Files'/></ListItem></div>
       <div className={cx(fileExplorerBase, {[fileExplorerActive]: isActive})}>
-        <List>
+        <List style={{display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 0}}>
           <ListItem button key={0} onClick={() => setIsActive(false)}><ListItemIcon><ArrowBackIcon/></ListItemIcon><ListItemText primary='Close' /></ListItem>
           <Divider />
+          <div className={fileExplorerFiles}>
           {files.map((file, i) => (
             <ListItem title={file[0]} style={{height: 42}} onClick={() => handleFileSelect(file[1])} button key={i+1}>
               <ListItemIcon className={classes.listIcon}><FileIcon /></ListItemIcon>
@@ -127,6 +142,7 @@ const FileExplorer = ({firebase, handleFileSelect, handleFileDelete, interpreter
               <ListItemIcon title='Delete this file from the database' className={cx(listIconDelete, classes.listIcon)} onMouseUp={() => handleDeleteFileClick(file[1])}><DeleteIcon /></ListItemIcon>
             </ListItem>
           ))}
+          </div>
         </List>
       </div>
       <ConfirmModal
