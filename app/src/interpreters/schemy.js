@@ -55,7 +55,7 @@ const Parser = program => {
       if (token) tokens.push(parse(token));
     } while (lines[line] !== "");
   } while (lines[line + 1] !== "" && line + 1 < lines.length);
-  if (tokens) return tokens;
+  if (tokens) return tokens.filter(ts => ts !== undefined);
   else return "EOF";
 };
 
@@ -133,10 +133,29 @@ const createGlobals = env => {
   env["list"] = (...list) => list;
   env["cons"] = (n, list) => [ n,  ...(Array.isArray(list) ? list : [list])]; // to keep to MIT implementation - the last element doesnt need to be a list
   env["append"] = (...lists) => lists.reduce((res, l) => [...res, ...l]);
-  env["length"] = list => list.length;
+  env["list-ref"] = (list, k) => list[k];
+  env["reverse"] = list => [...list].reverse(); // reverse returns a new list, doesn't modify the original
+  env["reverse!"] = list => list.reverse(); // reverse! modifies the list in place
+  env["length"] = list => Array.isArray(list) ? list.length : error(`Syntax Error: at procedure: length, expected: list, given: ${toSchemeWriteString(list)}`);
+  env["map"] = (callable, ...lists) => {
+    lists.reduce((acc, l) => {
+      if (!Array.isArray(l)) error(`Syntax Error: at procedure: map, expected: list, given: ${toSchemeWriteString(l)}`);
+      if (acc === -1) acc = l.length;
+      if (acc !== l.length) error (`Syntax Error: at procedure: map, all lists need to be the same length`);
+      return acc;
+    }, -1);
+    let res = [];
+    for (let i = 0; i < lists[0].length; i++) {
+      let currArgs = [];
+      for (let j = 0; j < lists.length; j++) {
+        currArgs.push(lists[j][i]);
+      }
+      res.push(callable.apply(null, currArgs))
+    }
+    return res;
+  }
   env["null?"] = list => Array.isArray(list) && list.length === 0;
   env["list?"] = list => Array.isArray(list);
-  // // env["cadr"] = list => list.slice(1, 2);
   env["integer?"] = a => Number.isInteger(a);
 
   env["display"] = a => setOutput(toSchemeDisplayString(a));
@@ -150,7 +169,27 @@ const createGlobals = env => {
     args = [ ...args, ...list ];
     return callable.apply(null, args);
   };
+  env["void"] = () => {}
+  env["error"] = (...m) => error(m.reduce((acc, cur) => acc += toSchemeDisplayString(cur)+" " , ""))
 
+  // string procedures
+  env["string?"] = s => typeof s === "string" && s[0] === '"' && s[s.length-1] === '"';
+  env["make-string"] = (k, c) => typeof k === "number" ? toString(new Array(Math.floor(k)).fill(env["char?"](c) ? getStringValue(env["char->name"](c)) : '-').join('')) : error(`Syntax Error: at procedure: make-string, expected 'length' to be a number, given: ${toSchemeWriteString(k)}`);
+  env["string"] = (...chars) => toString(chars.map(c => getStringValue(env["char->name"](c))).join(''));
+  env["string-append"] = (...strings) => toString(strings.reduce((acc, s) => env["string?"](s)? acc+=getStringValue(s) : error(`Syntax error: at procedure: string-append, expected: string, given: ${toSchemeWriteString(s)}`), ""));
+  env["string-length"] = s => env["string?"](s) ? getStringValue(s).length : error(`Syntax error: at procedure: string-length, expected: string, given: ${toSchemeWriteString(s)}`);
+  env["string-ref"] = (string, k) => env["string?"](string) ? (k < string.length-2 && k >= 0) ? toChar(getStringValue(string)[k]) : error(`${k} not in correct range`) : error(`Syntax error: at procedure: string-ref, expected: string, given: ${toSchemeWriteString(string)}`);
+  env["substring"] = (string, s, e) => env["string?"](string) ? ((s<=string.length-2&&s>=0)&&(e<=string.length-2&&e>=0)) ? toString(getStringValue(string).slice(s, e)) : error(`${s?s:''}${s&&e?' and/or ':''}${e?e:''} not in correct range`) : error(`Syntax error: at procedure: substring, expected: string, given: ${toSchemeWriteString(string)}`);;
+  env["string->list"] = string => env["string?"](string) ? getStringValue(string).split('').map(c => toChar(c)) : error(`Syntax error: at procedure: string->list, expected: string, given: ${toSchemeWriteString(string)}`);
+  env["list->string"] = list => env["list?"](list) ? toString(list.map(c => getStringValue(env["char->name"](c))).reduce((acc, c) => acc+=c, "")) : error(`Syntax error: at procedure: list->string, expected: list, given: ${toSchemeWriteString(list)}`);
+  env["number->string"] = num => typeof num !== 'number' ? error(`Syntax error: at procedure: number->string, expected: number, given: ${toSchemeWriteString(num)}`) : '"'+num+'"';
+
+  // char procedures
+  env["char?"] = c => typeof c === 'string' && c.length === 3 && c[0] === '#' && c[1] === '\\';
+  env["char->name"] = c => env["char?"](c) ? toString(getCharValue(c)) : error(`Syntax error: at procedure: char->name, expected: char, given: ${toSchemeWriteString(c)}`);
+  env["name->char"] = s => env["string?"](s) ? s.length-2 === 1 ? toChar(getStringValue(s)) : error(`Syntax error: at procedure: name->char, string needs to be one char`) : error(`Syntax error: at procedure: name->char, expected: string, given: ${toSchemeWriteString(s)}`);
+  env["char-upcase"] = c => env["char?"](c) ? toChar(getCharValue(c).toUpperCase()) : error(`Syntax error: at procedure: char-upcase, expected: char, given: ${toSchemeWriteString(c)}`);
+  env["char-downcase"] = c => env["char?"](c) ? toChar(getCharValue(c).toLowerCase()) : error(`Syntax error: at procedure: char-downcase, expected: char, given: ${toSchemeWriteString(c)}`);
   // add basic math constants
   env["PI"] = Math.PI;
   env["E"] = Math.E;
@@ -170,7 +209,10 @@ let globalEnv = createGlobals(environment({ varNames: [], args: [], outer: null 
 // console.log(globalEnv['+'](105, 47));
 // console.log(globalEnv["cadr"]([1, 2, 3, 4, 5]));
 // console.log(globalEnv["or"](false, false, true, false));
-
+const getStringValue = string => string.slice(1, string.length-1);
+const getCharValue = char => char.slice(2);
+const toString = char => '"'+char+'"';
+const toChar = s => "#\\"+s;
 // evaluate AST returned from parser()
 // expects an AST node and the current env that is to be used for the evaluation
 const evaluate = (ast, env) => {
@@ -208,6 +250,17 @@ const evaluate = (ast, env) => {
     checkSet(ast);
     checkVariable(env.find(ast[1])[ast[1]], {varName: ast[1], ast}, true);
     env.find(ast[1])[ast[1]] = evaluate(ast[2], env); // find the env where the variable is, and modify it
+  }
+  else if (ast[0] === "set-car!") {
+    checkSetList(ast);
+    checkVariable(env.find(ast[1])[ast[1]], {varName: ast[1], ast}, true);
+    env.find(ast[1])[ast[1]][0] = evaluate(ast[2], env);
+  }
+  else if (ast[0] === "set-cdr!") {
+    checkSetList(ast);
+    checkVariable(env.find(ast[1])[ast[1]], {varName: ast[1], ast}, true);
+    let secondVar = evaluate(ast[2]);
+    env.find(ast[1])[ast[1]] = [evaluate(ast[1], env)[0], ...(Array.isArray(secondVar) ? secondVar : [secondVar])]
   }
   else if (ast[0] === "lambda") {
     // function declaration
@@ -375,6 +428,7 @@ const checkDefine = ast => {
   if (msg) error(`Syntax error: define: ${msg}`);
 }
 const checkSet = ast => ast.length !== 3 ? error(`Syntax error: set!: ${ast.length === 1 ? "no arguments" : ast.length === 2 ? "not enough arguments" : "too many arguments"} `) :null;
+const checkSetList = ast => {if (ast.length !== 3) error(`Syntax error: ${ast[0]}`);}
 const checkLambda = (vars, bodyArray, ast) =>  {
   let msg = "";
   if (ast.length < 3) {
@@ -482,6 +536,9 @@ class Interpreter {
     } catch (err) {
       this.error = err;
     }
+    console.log(typeof this.error)
+    if (this.error instanceof TypeError) this.error = this.error.stack.split('\n').slice(0,2).join('\n');
+    else if (typeof this.error !== "string") this.error = ''+this.error;
     return {res: toSchemeWriteString(this.res, true), output: output.join(''), error: this.error, ast: this.ast}
   }
 }
