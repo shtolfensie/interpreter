@@ -763,6 +763,7 @@ const errorArea = css`
   font-family: monospace;
   font-weight: bold;
   color: red;
+  overflow-wrap: anywhere;
 `
 
 const textAreaHighlightContainer = css`
@@ -868,7 +869,7 @@ const Cell = ({
     e.stopPropagation();
     const bracketMap = {'[':']','{':'}','(':')'};
     const bracketMapReverse = {']':'[','}':'{',')':'('};
-    if (e.keyCode === 82 && e.ctrlKey) {
+    if (e.keyCode === 82 && e.ctrlKey) { // ctrl+r
       if (!window.confirm("All unsaved files and all envs will be lost. Do you want to reload?")) {
         e.preventDefault();
         return;
@@ -880,6 +881,7 @@ const Cell = ({
       && e.keyCode !== 40
       && e.keyCode !== 13
       && e.keyCode !== 9
+      && e.keyCode !== 191
       && !Object.keys(bracketMap).includes(e.key) 
       && !Object.keys(bracketMapReverse).includes(e.key)) return;
     console.log('hejo');
