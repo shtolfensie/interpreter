@@ -10,7 +10,14 @@ const EOF = "EOF",
   RCURLY = "RCURLY",
   VAR = "VAR",
   FUN = "FUN",
+  IF = "IF",
+  ELSE = "ELSE",
+  FOR = "FOR",
+  WHILE = "WHILE",
   ID = "ID",
+  AND = "AND",
+  OR = "OR",
+  CMPOP = "CMPOP",
   ASSIGN = "ASSIGN",
   SEMI = "SEMI",
   COMMA = "COMMA",
@@ -22,6 +29,13 @@ const BinOpNode = (left, op, right) => {
 
 const UnaryOpNode = (op, expr) => {
   return { op, expr, nodeType: "UnaryOpNode" };
+};
+
+const LogicOpNode = (left, op, right) => {
+  return {left, token: op, op: op ? op.type : false, right, nodeType: "LogicOpNode"}
+};
+const CompOpNode = (left, op, right) => {
+  return {left, token: op, op: op ? op.value : false, right, nodeType: "CompOpNode"}
 };
 
 const NumNode = token => {
@@ -36,17 +50,31 @@ const VarReAssignNode = (idToken, valueToken) => {
   return { idToken, valueToken, nodeType: "VarReAssignNode" };
 };
 
-const varDeclareNode = (idToken, assignValueNode) => {
+const VarDeclareNode = (idToken, assignValueNode) => {
   return { idToken, assignValueNode, nodeType: "VarDeclareNode"};
-}
+};
 
-const funcDeclareNode = (argDeclarationArr, body) => {
+const FuncDeclareNode = (argDeclarationArr, body) => {
   return { argDeclarationArr, body, nodeType: "FuncDeclareNode"};
-}
+};
 
-const funcCallNode = (idNode, argValuesArr) => {
+const FuncCallNode = (idNode, argValuesArr) => {
   return { idNode, argValuesArr, nodeType: "FuncCallNode"};
-}
+};
+
+const ScopeNode = (type, nextNode) => {
+  return { type, nextNode, nodeType: "ScopeNode"}
+};
+
+const IfNode = (conditionListNode, body, elseIfNode, elseStatement) => {
+  return { conditionListNode, body, elseIfNode, elseStatement, nodeType: "IfNode"};
+};
+const ForNode = (statement1, conditionListNode, statement2, body) => {
+  return {statement1, conditionListNode, statement2, body, nodeType: "ForNode"};
+};
+const WhileNode = (conditionListNode, body) => {
+  return {conditionListNode, body, nodeType: "WhileNode"};
+};
 
 const IdNode = token => {
   return { value: token.value, token, nodeType: "IdNode" };
@@ -112,9 +140,33 @@ const Lexer = (program, pos) => {
       advance();
       return { type: SEMI, value: currChar };
     }
+    else if (currChar === ">") {
+      advance(2);
+      return { type: CMPOP, value: ">"};
+    }
+    else if (currChar === "<") {
+      advance(2);
+      return { type: CMPOP, value: "<"};
+    }
     else if (currChar === "=" && peek() === ">") {
       advance(2);
       return { type: ARROW, value: "=>"};
+    } 
+    else if (currChar === "=" && peek() === "=") {
+      advance(2);
+      return { type: CMPOP, value: "=="};
+    }
+    else if (currChar === "!" && peek() === "=") {
+      advance(2);
+      return { type: CMPOP, value: "!="};
+    }
+    else if (currChar === ">" && peek() === "=") {
+      advance(2);
+      return { type: CMPOP, value: ">="};
+    } 
+    else if (currChar === "<" && peek() === "=") {
+      advance(2);
+      return { type: CMPOP, value: "<="};
     } 
     else if (currChar === "=") {
       advance();
@@ -123,6 +175,14 @@ const Lexer = (program, pos) => {
     else if (currChar === ",") {
       advance();
       return { type: COMMA, value: currChar};
+    }
+    else if (currChar === "&" && peek() === "&") {
+      advance(2);
+      return { type: AND, value: "&&" };
+    }
+    else if (currChar === "|" && peek() === "|") {
+      advance(2);
+      return { type: OR, value: "||" };
     }
   };
 
@@ -152,6 +212,10 @@ const Lexer = (program, pos) => {
   const RESERVED_TOKENS = {
     var: { type: VAR, value: "var" },
     fun: { type: FUN, value: "fun" },
+    if: { type: IF, value: "if" },
+    else: { type: ELSE, value: "else" },
+    for: { type: FOR, value: "for" },
+    while: { type: WHILE, value: "while" }
   };
 
   const getVariable = () => {
@@ -183,7 +247,8 @@ const Parser = program => {
       let lexerReturn = Lexer(program, pos);
       pos = lexerReturn.pos;
       currToken = lexerReturn.token;
-    } else {
+    }
+    else {
       if (type === RPAREN) error("Missing closing parenthesis");
       else error(`Wrong token type. Expected ${type}`);
     }
@@ -212,13 +277,27 @@ const Parser = program => {
   Grammar -- new
     program: statementList
     statementList: statement+
-    statement: (variableAssign | variableDeclaration | functionCall) SEMI | empty
+    statement: (variableAssign
+                | variableDeclaration
+                | functionCall
+                | block
+                | ifStatement
+                | forStatement
+                | whileStatement) SEMI | empty
     empty: 
     variableAssign: variable ASSIGN (expr | functionDeclaration)
     variableDeclaration: VAR (variable | variableAssign)
     argumentDeclaration: variable
     functionDeclaration: FUN LPAREN (argumentDeclaration (COMMA argumentDeclaration)*)* RPAREN ARROW block
     functionCall: variable LPAREN (expr (COMMA expr)*)* RPAREN
+    ifStatement: IF LPAREN conditionList RPAREN block ((ELSE ifStatement) | (ELSE block))?
+    whileStatement: WHILE LPAREN conditionList RPAREN block
+    forStatement: FOR LPAREN forStat1? SEMI conditionList? SEMI forStat3? RPAREN block
+    forStat1: variableDeclaration | variableAssign
+    forStat3: variableAssign | functionCall
+    conditionList: condition ((AND | OR) condition)*
+    condition: LPAREN conditionList RPAREN | expr (compareOperator expr)?
+    compareOperator: EQUAL | ((SMALLER | LARGER) EQUAL?) | NOTEQUAL
     block: LCURLY statementList RCURLY
     expr: term ((PLUS | MINUS) term)*
     term: factor ((TIMES | DIVIDED) factor)*
@@ -339,21 +418,21 @@ const Parser = program => {
     const id = variableId();
     let assignValueNode = undefined;
     if (currToken.type !== SEMI) assignValueNode = variableAssign(id);
-    return varDeclareNode(id, assignValueNode);
+    return VarDeclareNode(id, assignValueNode);
   }
 
   const functionDeclaration = () => {
     eat(FUN);
     eat(LPAREN);
     let argDeclarationArr = [];
-    while (currToken.type !== RPAREN) {
+    while (currToken.type !== RPAREN && currToken.type !== EOF) {
       argDeclarationArr.push(argumentDeclaration());
       if (currToken.type !== RPAREN) eat(COMMA);
     }
     eat(RPAREN);
     eat(ARROW);
     const body = block();
-    return funcDeclareNode(argDeclarationArr, body);
+    return FuncDeclareNode(argDeclarationArr, body);
   }
   const block = () => {
     eat(LCURLY);
@@ -369,7 +448,52 @@ const Parser = program => {
       if (currToken.type !== RPAREN) eat(COMMA);
     }
     eat(RPAREN);
-    return funcCallNode(id, argValuesArr);
+    return FuncCallNode(id, argValuesArr);
+  }
+
+  const ifStatement = () => {
+    eat(IF);
+    eat(LPAREN);
+    let conditionListNode = conditionList();
+    eat(RPAREN);
+    let body = block();
+    let elseIfNode = false;
+    let elseStat = false;
+    if (currToken.type !== SEMI && currToken.type !== EOF) { //!! maybe just if?
+      eat(ELSE);
+      if (currToken.type === IF) elseIfNode = ifStatement();
+      else elseStat = block();
+    }
+    return ScopeNode("if", IfNode(conditionListNode, body, elseIfNode, elseStat));
+  }
+
+  const conditionList = () => {
+    let node = condition();
+    let op = null;
+    while (currToken.type === AND || currToken.type === OR) {
+      op = currToken;
+      if (currToken.type === AND) eat(AND);
+      else eat(OR);
+      node = LogicOpNode(node, op, condition());
+    }
+    return node;
+  }
+  const condition = () => {
+    if (currToken.type === LPAREN) {
+      eat(LPAREN);
+      let list = conditionList();
+      eat(RPAREN);
+      return list;
+    }
+    let lSide = expr();
+    let op = null;
+    let rSide = null;
+    if (currToken.type === CMPOP) {
+      op = currToken;
+      eat(CMPOP);
+      rSide = expr();
+    }
+    return CompOpNode(lSide, op, rSide);
   }
 
   const statement = () => {
@@ -384,6 +508,7 @@ const Parser = program => {
       else node = variableAssign(id);
     }
     else if (currToken.type === VAR) node = variableDeclare();
+    else if (currToken.type === IF) node = ifStatement();
     else if (currToken.type === RCURLY || currToken.type === EOF) return;
     else node = expr();
 
@@ -432,15 +557,21 @@ let Interpreter = ast => {
     }
     // error here
   }
-  const makeEnv = (argDec, argVal) => {
+  const makeEnv = (argDec = [], argVal) => {
     let newEnv = {};
-    console.log(argDec, argVal)
-    if (argDec.length === argVal.length) {
+    if (argDec.length !== 0 && (argDec.length === argVal.length)) {
       for (let i = 0; i < argDec.length; i++) {
         newEnv[argDec[i].value] = visit(argVal[i]);
       }
     }
     return newEnv;
+  }
+  const fillEnv = (argDec, argVal) => {
+    if (argDec.length !== 0 && (argDec.length === argVal.length)) {
+      for (let i = 0; i < argDec.length; i++) {
+        envStack[envStack.length-1][argDec[i].value] = visit(argVal[i]);
+      }
+    }
   }
 
   let visitMethods = [];
@@ -467,29 +598,24 @@ let Interpreter = ast => {
   visitMethods["visitIdNode"] = node => {
     // let value = env[node.value];
     let value = getVal(node.value);
-    console.log(value, "<-- value")
+    // console.log(value, "<-- value")
     // let error = value === null ? 'variable declared, but unassigned' : 'undefined'
     // return value || error;
     return value;
   };
 
-  // visitMethods["visitVarAssignNode"] = node => {
-  //   env[node.idToken.value] = visit(node.valueToken);
-  //   console.log(env);
-  // };
-
   visitMethods["visitVarAssignNode"] = node => {
     envStack[getEnvIndex(node.idToken.value)][node.idToken.value] !== undefined
       ? envStack[getEnvIndex(node.idToken.value)][node.idToken.value] = visit(node.valueToken)
       : 'Error - variable not declared';
-    console.log(envStack);
+    // console.log(envStack);
   };
 
   visitMethods["visitVarDeclareNode"] = node => {
     let value = null;
     envStack[envStack.length-1][node.idToken.value] = value;
     if (node.assignValueNode !== undefined) visit(node.assignValueNode);
-    console.log(envStack);
+    // console.log(envStack);
   };
 
   visitMethods["visitFuncDeclareNode"] = node => {
@@ -500,20 +626,65 @@ let Interpreter = ast => {
     const declaredFunc = visit(node.idNode);
     if (typeof declaredFunc === "object" && declaredFunc.type === "function") {
       envStack.push(makeEnv(declaredFunc.declarations, node.argValuesArr));
-      console.log("body: ", declaredFunc.body)
+      // console.log("body: ", declaredFunc.body)
       visit(declaredFunc.body);
       console.log(envStack)
       envStack.pop();
     }
   }
 
+  visitMethods["visitScopeNode"] = node => {
+    envStack.push(makeEnv());
+    visit(node.nextNode);
+    envStack.pop();
+  }
+
+  visitMethods["visitIfNode"] = node => {
+    if (visit(node.conditionListNode)) visit(node.body);
+    else if (node.elseStatement) visit(node.elseStatement);
+    else if (node.elseIfNode) visit(node.elseIfNode);
+  }
+
+  visitMethods["visitLogicOpNode"] = node => {
+    let left = visit(node.left);
+    if (node.op) {
+      let right = visit(node.right);
+      if (node.op === AND) return left && right;
+      else if (node.op === OR) return left || right;
+    }
+  }
+
+  visitMethods["visitCompOpNode"] = node => {
+    let left = visit(node.left);
+    if (node.op) {
+      let right = visit(node.right);
+      switch (node.op) {
+        case "==":
+          return left === right;
+        case "!=":
+          return left !== right;
+        case ">":
+          return left > right;
+        case "<":
+          return left < right;
+        case ">=":
+          return left >= right;
+        case "<=":
+          return left <= right;
+      }
+    }
+    else return !!left;
+  }
+
   const visit = node => {
-    console.log(node.nodeType);
+    // console.log(node.nodeType);
 
     return visitMethods[`visit${node.nodeType}`](node);
   };
 
-  return visit(ast);
+  let r = visit(ast);
+  console.log(envStack)
+  return r;
 };
 
 try {
@@ -524,22 +695,76 @@ try {
 
   // let res = Parser("var t; var bum = 6; var rum = bum + 56;");
   // let res = Parser("var bum = 6; var rum = bum + 56; var f = fun (bum) => { var b = bum; var cc = rum;}; f(100);");
-  let res = Parser(`var bum = 6; 
-                    var rum = bum + 56;
-                    var f = fun(bum) => {
-                      var b = bum;
-                      var cc = rum;
-                      rum = 8;
-                    }; 
-                    var di = fun () => {
-                      rum = 999;
-                      f(99+1);
-                    };
-                    di();
-                    var test = rum;`);
+  // let res = Parser(`var bum = 6; 
+  //                   var rum = bum + 56;
+  //                   var f = fun(bum) => {
+  //                     var b = bum;
+  //                     var cc = rum;
+  //                     rum = 8;
+  //                   }; 
+  //                   var di = fun () => {
+  //                     rum = 999;
+  //                     f(99+1);
+  //                   };
+  //                   di();
+  //                   var test = rum;`);
+  let res = Parser(`
+    var t = 0;
+    if (t && 1) {
+      t = 4;
+    };
+  `);
+  // let res = Parser(` factorial
+  //   var res = 0;
+  //   var fac = fun (n) => {
+  //     if (n > 1) {
+  //       fac(n-1);
+  //       res = res * n;
+  //     } else {
+  //       res = 1;
+  //     };
+  //   };
+  //   fac(5);
+  // `);
+  // let res = Parser(` // fib numbers
+  //   var res = 0;
+  //   var fib = fun (n) => {
+  //     if (n == 1){
+  //       res = 1;
+  //     } else if (n == 2) {
+  //       res = 1;
+  //     } else {
+  //       fib(n-1);
+  //       var temp = res;
+  //       fib(n-2);
+  //       res = temp + res;
+  //     };
+  //   };
+  //   fib(19);
+  // `);
+  // let res = Parser(` // exponents
+  //   var expM = fun (b, e) => {
+  //     var res = 0;
+  //     var exp = fun (b, e) => {
+  //       if (e == 1) {
+  //         res = b;
+  //       } else if (e == -1) {
+  //         res = 1 / b;
+  //       } else if (e < 0) {
+  //         exp(b, e+1);
+  //         res = res / b;
+  //       } else {
+  //         exp(b, e-1);
+  //         res = b * res;
+  //       };
+  //     };
+  //     exp(b, e);
+  //   };
+  //   expM(4,-3);
+  // `);
   // let res = Parser('var num = 10;');
   // console.log(res);
-  res["statementArr"].forEach(statement => console.log(statement));
+  // res["statementArr"].forEach(statement => console.log(statement));
 
   let calculated = Interpreter(res);
   console.log(calculated);
