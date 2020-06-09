@@ -3,6 +3,7 @@ import { css, cx } from 'emotion';
 import { Modal, Button, Collapse } from '@material-ui/core';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import {exampleFiles, sectionArray} from '../utils/examples.js';
+import {exampleFilesJsl, sectionArrayJsl} from '../utils/examplesJSL.js';
 
 const modalContainer = css`
   width: 85%;
@@ -26,7 +27,7 @@ const modalContainer = css`
 
 const ExamplesMenu = ({ setExampleFile, isInterpreterJSlike }) => {
 
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => { // to blur the examples button, focus the document and make the keyevent listener work. Needs to be in an effect to jire after the focus is shifted to the button after closing
     if (!isOpen) {
@@ -39,6 +40,16 @@ const ExamplesMenu = ({ setExampleFile, isInterpreterJSlike }) => {
 
   const handleOpen = e => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
+
+  const setExampleFileAndClose = (fileId) => {
+    let file;
+    if (isInterpreterJSlike) file = exampleFilesJsl[fileId];
+    else if (!isInterpreterJSlike) file = exampleFiles[fileId];
+    setExampleFile(file);
+    handleClose();
+  }
+
+  let curSectionArray = isInterpreterJSlike ? sectionArrayJsl : sectionArray;
 
   return (
     <>
@@ -54,7 +65,7 @@ const ExamplesMenu = ({ setExampleFile, isInterpreterJSlike }) => {
         }}
       >
         <div className={modalContainer}>
-          {sectionArray.map((section, i) => <Section key={i} sectionData={section} setExampleFile={setExampleFile}/>)}
+          {curSectionArray.map((section, i) => <Section key={i} sectionData={section} setExampleFile={setExampleFileAndClose}/>)}
         </div>
       </Modal>
     </>
@@ -106,8 +117,8 @@ const collapseContainer = css`
 const exampleButton = css`
   cursor: pointer;
   user-select: none;
-  width: 150px;
-  height: 150px;
+  min-width: 150px;
+  height: 30px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
   /* box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.56); */
   /* box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.3); */
@@ -142,7 +153,7 @@ const Section = ({sectionData, setExampleFile}) => {
       <Collapse in={isOpen}>
         <div className={collapseContainer}>
           {sectionData.examples.map((example, i) => (
-            <div className={exampleButton} onMouseUp={() => setExampleFile(exampleFiles[example.eId])} key={i}>
+            <div className={exampleButton} onMouseUp={() => setExampleFile(example.eId)} key={i}>
               <div className={examplePicutre}></div>
             <div className={exampleTitle}>{example.eTitle}</div>
             </div>

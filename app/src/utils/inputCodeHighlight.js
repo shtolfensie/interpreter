@@ -1,5 +1,6 @@
 import hljs from 'highlight.js/lib/core';
 import scheme from 'highlight.js/lib/languages/scheme';
+import javascript from 'highlight.js/lib/languages/javascript';
 
 import parse from 'html-react-parser';
 
@@ -75,8 +76,11 @@ const bracketColorizer = (hCode, code, caretPos) => {
 // 5: (2) [84, 92]
 // 6: (2) [59, 93]
 // 7: (2) [26, 94]
-export default (code, caretPos) => {
+export default (code, caretPos, lang) => {
+  if (lang === 'sch') lang = 'scheme';
+  else lang = 'javascript'
   hljs.registerLanguage('scheme', scheme);
-  const colorizedBracektCode = bracketColorizer(hljs.highlight('scheme', code, true).value, code, caretPos)
+  hljs.registerLanguage('javascript', javascript);
+  const colorizedBracektCode = bracketColorizer(hljs.highlight(lang, code, true).value, code, caretPos)
   return parse(colorizedBracektCode);
 }

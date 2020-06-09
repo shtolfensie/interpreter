@@ -445,6 +445,7 @@ const EditorJupy = ({
                 key={i}
                 cellIndex={i}
                 cellData={cell}
+                interpreter={interpreter}
                 cellEditorData={fileEditorData.cells[i]}
                 selectionStart={selectionStart}
                 isLast={i === fileData.cells.length-1}
@@ -819,6 +820,7 @@ const Cell = ({
   cellIndex,
   selectionStart,
   cellData,
+  interpreter,
   cellEditorData,
   isLast,
   isActive,
@@ -1096,7 +1098,7 @@ const Cell = ({
             onKeyUp={handleCellInputKeyUp}
             onBlur={handleInputBlur}
           />
-          <pre  className={cx(inputHighlighted, 'hljs')} style={{height: cellHeight}}>{highlightInput(input, caretPos)}</pre>
+          <pre  className={cx(inputHighlighted, 'hljs')} style={{height: cellHeight}}>{highlightInput(input, caretPos, interpreter)}</pre>
         </div>
       </div>
       {output.length !== 0 && 
